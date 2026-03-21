@@ -543,72 +543,105 @@ function RecordingScreen({
           <span style={{ color: "#F0EAD625" }}>|</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
         </div>
-        <button
-          onClick={onProceed}
-          style={{ ...solidBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 28px", letterSpacing: "0.08em" }}
-        >
-          Proceed to Soundscape →
-        </button>
       </div>
 
-      {/* Two-column body */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 0 }}>
-        {/* Left — Input */}
-        <div style={{ borderRight: "4px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Three-column body */}
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
 
-          {/* Fixed panel header */}
-          <div style={{ padding: "24px 32px 16px", background: "#121212", flexShrink: 0, borderBottom: "2px solid #F0EAD620", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+        {/* ── Panel 1: REFERENCE (20%) ── */}
+        <div style={{ width: "20%", borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
+          {/* Panel header */}
+          <div style={{ padding: "14px 18px", borderBottom: "2px solid #F0EAD620", flexShrink: 0 }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em" }}>Data Reconstruction</div>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#F0EAD630", letterSpacing: "0.06em", marginTop: "2px" }}>{language.title}</div>
+          </div>
+          {/* Scrollable reference content */}
+          <div className="panel-scroll" style={{ flex: 1, padding: "16px", display: "flex", flexDirection: "column", gap: "18px" }}>
+
+            {/* Wiktionary Lexicon */}
             <div>
-              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "4px" }}>The Vocal Lab</div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#a09880" }}>Design a voice and script phrases in {language.title}</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>Wiktionary</div>
+              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.03em", lineHeight: 1.2, marginBottom: "4px" }}>{language.lexiconSample.word}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "0.78rem", fontStyle: "italic", color: "#a09880", marginBottom: "6px" }}>{language.lexiconSample.type}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: "#8a9ab5", marginBottom: "8px" }}>{language.lexiconSample.ipa}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "0.82rem", color: "#F0EAD6", lineHeight: "1.6", fontStyle: "italic" }}>{language.lexiconSample.meaning}</div>
+            </div>
+
+            <div style={{ borderTop: "1px solid #F0EAD615" }} />
+
+            {/* PHOIBLE Grid */}
+            <div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>PHOIBLE — DNA</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                {language.phoneticInventory.map((ph, i) => (
+                  <div key={i} style={{ border: "1px solid #F0EAD6", padding: "4px 8px", fontFamily: "Georgia, serif", fontSize: "1rem", color: "#8a9ab5", background: "#0d0d0d", textAlign: "center" }}>
+                    {ph}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid #F0EAD615" }} />
+
+            {/* Wikipedia acoustic summary */}
+            <div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>Wikipedia</div>
+              <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "0.78rem", color: "#F0EAD6", lineHeight: "1.7" }}>{language.acousticConsensus}</p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── Panel 2: THE LAB (55%) ── */}
+        <div style={{ flex: 1, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Panel header */}
+          <div style={{ padding: "14px 24px", borderBottom: "2px solid #F0EAD620", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+            <div>
+              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.9rem", letterSpacing: "0.1em" }}>Vocal Synthesizer</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", marginTop: "2px" }}>Script phrases in {language.title}</div>
             </div>
             <button
               onClick={handleGenerate}
               disabled={generating || !phoneticScript.trim()}
-              style={{ ...solidBtn, fontSize: "1.1rem", padding: "10px 20px", flexShrink: 0, opacity: generating || !phoneticScript.trim() ? 0.45 : 1 }}
+              style={{ ...solidBtn, fontSize: "1rem", padding: "8px 18px", flexShrink: 0, opacity: generating || !phoneticScript.trim() ? 0.45 : 1 }}
             >
               {generating ? "Generating..." : "Generate Audio"}
             </button>
           </div>
 
-          {/* Scrollable body */}
-          <div className="panel-scroll" style={{ flex: 1, padding: "20px 32px 32px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* Scrollable lab content */}
+          <div className="panel-scroll" style={{ flex: 1, padding: "20px 24px 28px", display: "flex", flexDirection: "column", gap: "14px" }}>
 
-            {/* Voice Description */}
-            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
-              Voice Description
-            </label>
-            <textarea
-              placeholder="Describe the speaker (e.g., A raspy old man, a booming giant...)"
-              value={voicePrompt}
-              onChange={(e) => setVoicePrompt(e.target.value)}
-              style={{ width: "100%", height: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "12px", resize: "none", flexShrink: 0 }}
-            />
+            {/* Box 1: Voice Designer */}
+            <div>
+              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>
+                Voice Designer
+              </label>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.72rem", color: "#F0EAD640", letterSpacing: "0.06em", marginBottom: "6px" }}>Describes the speaker's physical vocal character.</div>
+              <textarea
+                value={voicePrompt}
+                onChange={(e) => setVoicePrompt(e.target.value)}
+                style={{ width: "100%", height: "72px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.1rem", padding: "10px", resize: "none" }}
+              />
+            </div>
 
-            <div style={{ borderTop: "2px solid #F0EAD620", flexShrink: 0 }} />
+            <div style={{ borderTop: "1px solid #F0EAD618" }} />
 
-            {/* The Intent */}
-            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
-              The Intent (English)
-            </label>
-            <textarea
-              placeholder="Describe the emotion, action, or meaning. e.g., A desperate plea to the gods, a violent war cry, a slow mournful chant..."
-              value={englishIntent}
-              onChange={(e) => setEnglishIntent(e.target.value)}
-              style={{ width: "100%", height: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.15rem", padding: "12px", resize: "none", flexShrink: 0 }}
-            />
+            {/* Box 2: The Intent */}
+            <div>
+              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>
+                The Intent (English)
+              </label>
+              <textarea
+                placeholder="Describe the emotion, action, or meaning. e.g., A desperate plea to the gods, a violent war cry..."
+                value={englishIntent}
+                onChange={(e) => setEnglishIntent(e.target.value)}
+                style={{ width: "100%", height: "68px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.1rem", padding: "10px", resize: "none" }}
+              />
+            </div>
 
-            {/* Generate Script button */}
-            <button
-              onClick={handleGenerateScript}
-              disabled={!englishIntent.trim() || isGeneratingScript}
-              style={{ ...solidBtn, fontSize: "1rem", padding: "10px 16px", letterSpacing: "0.08em", opacity: !englishIntent.trim() || isGeneratingScript ? 0.4 : 1, flexShrink: 0 }}
-            >
-              {isGeneratingScript ? "[ DECRYPTING... ]" : "[ Generate Script ]"}
-            </button>
-
-            {/* Artistic Directives */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", flexShrink: 0 }}>
+            {/* Control Row: Directives + Generate Script */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               {DIRECTIVE_LABELS.map((d) => {
                 const active = selectedDirectives.includes(d);
                 return (
@@ -620,9 +653,9 @@ function RecordingScreen({
                       color: active ? "#121212" : "#F0EAD6",
                       border: "2px solid #F0EAD6",
                       fontFamily: "'VT323', monospace",
-                      fontSize: "1rem",
-                      letterSpacing: "0.06em",
-                      padding: "6px 14px",
+                      fontSize: "0.9rem",
+                      letterSpacing: "0.05em",
+                      padding: "5px 12px",
                       cursor: "pointer",
                       textTransform: "uppercase",
                     }}
@@ -631,82 +664,100 @@ function RecordingScreen({
                   </button>
                 );
               })}
+              <button
+                onClick={handleGenerateScript}
+                disabled={!englishIntent.trim() || isGeneratingScript}
+                style={{ ...solidBtn, fontSize: "0.9rem", padding: "5px 14px", letterSpacing: "0.06em", opacity: !englishIntent.trim() || isGeneratingScript ? 0.4 : 1, marginLeft: "auto" }}
+              >
+                {isGeneratingScript ? "Decrypting..." : "Generate Script"}
+              </button>
             </div>
 
-            {/* The Native Script */}
-            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
-              The Native Script (Editable)
-              {isGeneratingScript && <span style={{ marginLeft: "12px", color: "#F0EAD660", fontSize: "0.9rem" }}>— BUFFERING RAW DATA...</span>}
-            </label>
-            <textarea
-              readOnly={isGeneratingScript}
-              placeholder="AI-generated phonetic script will appear here. You may edit it before generating audio."
-              value={phoneticScript}
-              onChange={(e) => !isGeneratingScript && setPhoneticScript(e.target.value)}
-              style={{
-                width: "100%",
-                flex: 1,
-                minHeight: "80px",
-                background: isGeneratingScript ? "#0a0a0a" : "transparent",
-                border: `2px solid ${isGeneratingScript ? "#F0EAD650" : "#F0EAD6"}`,
-                color: isGeneratingScript ? "#F0EAD660" : "#F0EAD6",
-                fontFamily: "'VT323', monospace",
-                fontSize: "1.3rem",
-                padding: "12px",
-                resize: "none",
-                transition: "color 0.2s, border-color 0.2s",
-              }}
-            />
+            {/* Box 3: Native Script */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0 }}>
+                The Native Script (Editable)
+                {isGeneratingScript && <span style={{ marginLeft: "10px", color: "#F0EAD650", fontSize: "0.78rem" }}>— BUFFERING RAW DATA...</span>}
+              </label>
+              <textarea
+                readOnly={isGeneratingScript}
+                placeholder="AI-generated phonetic script will appear here. Edit before generating audio."
+                value={phoneticScript}
+                onChange={(e) => !isGeneratingScript && setPhoneticScript(e.target.value)}
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  minHeight: "90px",
+                  background: isGeneratingScript ? "#0a0a0a" : "transparent",
+                  border: `2px solid ${isGeneratingScript ? "#F0EAD650" : "#F0EAD6"}`,
+                  color: isGeneratingScript ? "#F0EAD660" : "#F0EAD6",
+                  fontFamily: "'VT323', monospace",
+                  fontSize: "1.3rem",
+                  padding: "10px",
+                  resize: "none",
+                  transition: "color 0.2s, border-color 0.2s",
+                }}
+              />
+            </div>
 
-            {/* Typing Guide */}
-            <div style={{ border: "2px solid #F0EAD630", padding: "12px 14px", flexShrink: 0 }}>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Typing Guide</div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD6", lineHeight: "1.5" }}>{language.typingGuide}</div>
+            {/* Footer: Typing Guide */}
+            <div style={{ border: "1px solid #F0EAD625", padding: "10px 14px", flexShrink: 0 }}>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.72rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Typing Guide</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#F0EAD6", lineHeight: "1.55" }}>{language.typingGuide}</div>
             </div>
 
           </div>
         </div>
 
-        {/* Right — Clip Library */}
-        <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div>
-            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "6px" }}>Clip Library</div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>{clipLibrary.length} clip{clipLibrary.length !== 1 ? "s" : ""} recorded</div>
+        {/* ── Panel 3: LIBRARY (25%) ── */}
+        <div style={{ width: "25%", display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
+          {/* Panel header */}
+          <div style={{ padding: "14px 18px", borderBottom: "2px solid #F0EAD620", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+            <div>
+              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.9rem", letterSpacing: "0.08em" }}>Clip Library</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", marginTop: "2px" }}>{clipLibrary.length} take{clipLibrary.length !== 1 ? "s" : ""} recorded</div>
+            </div>
+            <button
+              onClick={onProceed}
+              style={{ ...solidBtn, fontSize: "0.8rem", padding: "6px 12px", letterSpacing: "0.04em", flexShrink: 0 }}
+            >
+              Soundscape →
+            </button>
           </div>
 
-          <div style={{ borderTop: "2px solid #F0EAD630" }} />
-
-          <div className="panel-scroll" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0" }}>
+          {/* Clip list */}
+          <div className="panel-scroll" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {clipLibrary.length === 0 && (
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", padding: "24px 0", textAlign: "center", border: "2px dashed #F0EAD630" }}>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "20px 16px", textAlign: "center", borderBottom: "2px dashed #F0EAD620", margin: "16px" }}>
                 No clips yet. Generate audio to build your library.
               </div>
             )}
             {clipLibrary.map((clip, idx) => (
               <div
                 key={clip.id}
-                style={{ display: "flex", alignItems: "center", gap: "10px", border: "2px solid #F0EAD6", borderBottom: idx === clipLibrary.length - 1 ? "2px solid #F0EAD6" : "none", padding: "12px 14px", background: "#121212" }}
+                style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #F0EAD620", padding: "10px 16px", background: "#121212" }}
               >
                 <button
                   onClick={() => handlePlay(clip.id)}
-                  style={{ ...solidBtn, fontSize: "1.1rem", padding: "6px 14px", minWidth: "60px", flexShrink: 0 }}
+                  style={{ ...solidBtn, fontSize: "1rem", padding: "4px 12px", minWidth: "48px", flexShrink: 0 }}
                 >
                   {playingId === clip.id ? "▶▶" : "▶"}
                 </button>
                 <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880" }}>{clip.duration}s</div>
+                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
+                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.8rem", color: "#a09880" }}>{clip.duration}s</div>
                 </div>
                 <button
                   onClick={() => onDeleteClip(clip.id)}
-                  style={{ background: "#121212", color: "#a09880", border: "2px solid #a09880", fontFamily: "'VT323', monospace", fontSize: "1.05rem", cursor: "pointer", padding: "6px 12px", flexShrink: 0 }}
+                  style={{ background: "transparent", color: "#a09880", border: "1px solid #a09880", fontFamily: "'VT323', monospace", fontSize: "0.9rem", cursor: "pointer", padding: "4px 8px", flexShrink: 0 }}
                 >
-                  Delete
+                  ✕
                 </button>
               </div>
             ))}
           </div>
         </div>
+
       </div>
 
     </div>

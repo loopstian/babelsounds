@@ -1,0 +1,39 @@
+"Refactor **Screen 2 (The Vocal Lab)** into a professional three-column laboratory layout that integrates the scientific data from Screen 1.
+
+**1. Create the Three-Column Layout:**
+- The main body of Screen 2 should be a `flex` container with three distinct vertical panels:
+    - **Panel 1: REFERENCE (Left - 20% width):** A narrow, read-only data strip.
+    - **Panel 2: THE LAB (Center - 55% width):** The primary workstation.
+    - **Panel 3: LIBRARY (Right - 25% width):** The clip library.
+- Use harsh vertical borders (`border-r-2 border-[#F0EAD6]`) to separate the panels.
+
+**2. Populate Panel 1 (Reference Data):**
+- Label this panel: `DATA RECONSTRUCTION`.
+- **Top Section:** Display the **Wiktionary Lexicon Sample** from Screen 1 (The Word, the italicized Type, and the Serif-font IPA).
+- **Middle Section:** Display the **PHOIBLE DNA Grid** (The small boxes with IPA characters).
+- **Bottom Section:** A small summary of the `acousticConsensus` from Wikipedia.
+- This panel should be scrollable if the content is long.
+
+**3. Populate Panel 2 (The Lab - Center):**
+- **Panel Header:** Title: `VOCAL SYNTHESIZER`. On the far right of the header, place the `[ GENERATE AUDIO ]` button.
+- **Content (Vertical Stack):**
+    - **Box 1: VOICE DESIGNER:** A text area pre-filled with `selectedLanguage.vocalBlueprint`. Subtitle: 'Describes the speaker’s physical vocal cords.'
+    - **Box 2: THE INTENT (ENGLISH):** A text area for the user to describe the emotion/meaning.
+    - **Control Row:** The 'Artistic Directives' toggle buttons (`[ WHISPERED ]`, etc.) and the `[ GENERATE SCRIPT ]` button.
+    - **Box 3: THE NATIVE SCRIPT:** The editable phonetic output (keep the 'decryption' flicker animation).
+    - **Footer Helper:** Display the `typingGuide` ('Use k, q, avoid f...') immediately below the script box.
+
+**4. Populate Panel 3 (Library - Right):**
+- **Panel Header:** Title: `CLIP LIBRARY`. On the far right of the header, place the `[ PROCEED TO SOUNDSCAPE → ]` button.
+- **Content:** The list of recorded audio takes (Clip name, play button, delete button).
+
+**5. Navigation & Logic:**
+- Ensure the 'Back to Archives' button remains in the global top-left header.
+- The 'Generate Audio' button must use the text from the **Voice Designer** box to design the voice and the **Native Script** box to speak the words.
+
+**6. Visual Style:**
+- Strictly maintain the #121212 background and #F0EAD6 text/borders.
+- No rounded corners (`rounded-none`).
+- Use 'VT323' for UI labels and 'Georgia/Serif' for IPA characters.
+
+**Please organize the workstation so the user can look at the data on the left while they design the voice and script in the center.**"
