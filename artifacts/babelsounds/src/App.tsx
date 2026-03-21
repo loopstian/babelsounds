@@ -530,7 +530,7 @@ function SoundscapeScreen({
     return Math.max(0, Math.min(Math.floor(x / PX_PER_SEC), TIMELINE_DURATION - 1));
   }
 
-  function handleTrackDrop(trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
+  function handleTrackDrop(trackType: "voice" | "atmosphere", trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     const moveData = e.dataTransfer.getData("application/track-move");
     if (moveData) {
@@ -546,6 +546,8 @@ function SoundscapeScreen({
     if (!clipData) return;
     try {
       const parsed = JSON.parse(clipData);
+      const clipType = parsed.clipType as string;
+      if (clipType !== trackType) return;
       const name = typeof parsed.name === "string" ? parsed.name : "";
       const duration = typeof parsed.duration === "number" && parsed.duration > 0 ? parsed.duration : 0;
       if (!name || !duration) return;
@@ -566,6 +568,10 @@ function SoundscapeScreen({
       const dur = Math.floor(Math.random() * 8) + 8;
       const clip: AudioClip = { id: `atm_${Date.now()}`, name: atmosphereText.trim(), duration: dur };
       setAtmosphereClips((prev) => [...prev, clip]);
+      setAtmosphereTrack((prev) => [
+        ...prev,
+        { id: `tc_atm_${Date.now()}`, name: clip.name, startTime: 0, duration: TIMELINE_DURATION },
+      ]);
       setGeneratingAtmosphere(false);
       setAtmosphereText("");
     }, 1400);
@@ -616,12 +622,14 @@ function SoundscapeScreen({
                   No clips yet.
                 </div>
               )}
-              {allSidebarClips.map((clip) => (
+              {allSidebarClips.map((clip) => {
+                const isAtmosphere = atmosphereClips.some((a) => a.id === clip.id);
+                return (
                 <div
                   key={clip.id}
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration }));
+                    e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration, clipType: isAtmosphere ? "atmosphere" : "voice" }));
                     e.dataTransfer.effectAllowed = "copy";
                   }}
                   style={{
@@ -639,10 +647,10 @@ function SoundscapeScreen({
                   <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", flexShrink: 0, color: "#a09880" }}>▶</span>
                   <div style={{ flex: 1, overflow: "hidden" }}>
                     <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
-                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s</div>
+                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s · {isAtmosphere ? "Atmosphere" : "Voice"}</div>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           </div>
         )}
@@ -688,7 +696,7 @@ function SoundscapeScreen({
                 trackWidth={trackWidth}
                 clips={voiceTrack}
                 onRemoveClip={(id) => setVoiceTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleTrackDrop(setVoiceTrack, e)}
+                onDrop={(e) => handleTrackDrop("voice", setVoiceTrack, e)}
               />
 
               {/* Track 2: Atmosphere */}
@@ -698,7 +706,7 @@ function SoundscapeScreen({
                 trackWidth={trackWidth}
                 clips={atmosphereTrack}
                 onRemoveClip={(id) => setAtmosphereTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleTrackDrop(setAtmosphereTrack, e)}
+                onDrop={(e) => handleTrackDrop("atmosphere", setAtmosphereTrack, e)}
               />
             </div>
           </div>
