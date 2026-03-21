@@ -144,16 +144,39 @@ function LanguageModal({
       style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="screen-fade-in" style={{ background: "#121212", border: "4px solid #F0EAD6", maxWidth: "680px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
-        <div style={{ background: "#F0EAD6", color: "#121212", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.06em" }}>
-          <span>Research Dossier</span>
-          <button onClick={onClose} style={{ background: "#121212", color: "#F0EAD6", border: "none", fontFamily: "'VT323', monospace", fontSize: "1.2rem", cursor: "pointer", padding: "2px 12px" }}>Close</button>
+      <div className="screen-fade-in" style={{ background: "#121212", border: "4px solid #F0EAD6", maxWidth: "680px", width: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+
+        {/* Dossier label bar */}
+        <div style={{ background: "#F0EAD6", color: "#121212", padding: "8px 20px", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.75rem", letterSpacing: "0.06em", flexShrink: 0 }}>
+          Research Dossier
         </div>
-        <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ borderBottom: "1px solid #F0EAD625", paddingBottom: "14px", display: "flex", alignItems: "baseline", gap: "16px", flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.05em" }}>{signal.title}</span>
-            <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Match: {signal.matchScore}%</span>
+
+        {/* Sticky header */}
+        <div style={{ background: "#121212", borderBottom: "2px solid #F0EAD6", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, zIndex: 10, gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "14px", flexWrap: "wrap", minWidth: 0 }}>
+            <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.05em", lineHeight: 1.2 }}>{signal.title}</span>
+            <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", whiteSpace: "nowrap" }}>Match: {signal.matchScore}%</span>
           </div>
+          <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
+            <button
+              onClick={() => onUse(signal)}
+              style={{ ...solidBtn, fontSize: "1rem", padding: "8px 16px", letterSpacing: "0.06em", border: "2px solid #F0EAD6", whiteSpace: "nowrap" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#121212"; (e.currentTarget as HTMLButtonElement).style.color = "#F0EAD6"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EAD6"; (e.currentTarget as HTMLButtonElement).style.color = "#121212"; }}
+            >
+              Use this language
+            </button>
+            <button
+              onClick={onClose}
+              style={{ background: "transparent", color: "#F0EAD6", border: "2px solid #F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", cursor: "pointer", padding: "6px 14px", letterSpacing: "0.06em" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
           {/* The Artifact — Lexicon Sample */}
           <div style={{ border: "2px solid #F0EAD6", padding: "20px" }}>
@@ -192,14 +215,6 @@ function LanguageModal({
             Sources verified across {signal.sources.length} domains: {signal.sources.join(", ")}
           </div>
 
-          <button
-            onClick={() => onUse(signal)}
-            style={{ ...solidBtn, fontSize: "1.2rem", padding: "15px", width: "100%", letterSpacing: "0.08em", border: "4px solid #F0EAD6" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#121212"; (e.currentTarget as HTMLButtonElement).style.color = "#F0EAD6"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#F0EAD6"; (e.currentTarget as HTMLButtonElement).style.color = "#121212"; }}
-          >
-            Use this language
-          </button>
         </div>
       </div>
     </div>
