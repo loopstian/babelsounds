@@ -120,7 +120,8 @@ function ArchiveScanner() {
     }, 80);
   }
 
-  function renderLine(line: string, idx: number) {
+  function renderLine(line: string | undefined, idx: number) {
+    if (!line) return <div key={idx} style={{ minHeight: "1.3em" }} />;
     const words = line.split(" ");
     return (
       <div key={idx} style={{ marginBottom: "2px", minHeight: "1.3em" }}>
@@ -415,18 +416,32 @@ function LinguisticSynthesis() {
 
 // ─── Drawer 003: Audio Sequencer ─────────────────────────────────────────────
 
+const BASE_HEIGHTS = [8, 20, 35, 18, 42, 28, 12, 38, 22, 45, 16, 30, 40, 14, 25, 36, 10, 44, 20, 32, 8, 38, 26, 15, 40, 22, 33, 12, 48, 18, 28, 42, 9, 35, 24, 16, 44, 30, 11, 38, 20, 46, 14, 32, 28, 41, 7, 36, 23, 17];
+
 function WaveformDisplay({ playing }: { playing: boolean }) {
-  const heights = [8, 20, 35, 18, 42, 28, 12, 38, 22, 45, 16, 30, 40, 14, 25, 36, 10, 44, 20, 32, 8, 38, 26, 15, 40, 22, 33, 12, 48, 18, 28, 42, 9, 35, 24, 16, 44, 30, 11, 38, 20, 46, 14, 32, 28, 41, 7, 36, 23, 17];
+  const [animHeights, setAnimHeights] = useState<number[]>(BASE_HEIGHTS);
+
+  useEffect(() => {
+    if (!playing) {
+      setAnimHeights(BASE_HEIGHTS);
+      return;
+    }
+    const interval = setInterval(() => {
+      setAnimHeights(BASE_HEIGHTS.map((h) => Math.max(4, h + Math.floor(Math.random() * 10 - 5))));
+    }, 150);
+    return () => clearInterval(interval);
+  }, [playing]);
+
   return (
     <div style={{ display: "flex", alignItems: "center", height: "52px", gap: "2px", flex: 1, padding: "0 8px" }}>
-      {heights.map((h, i) => (
+      {animHeights.map((h, i) => (
         <div
           key={i}
           className="waveform-bar"
           style={{
-            height: `${playing ? h + Math.floor(Math.random() * 8 - 4) : h}px`,
-            opacity: playing ? 0.9 + Math.random() * 0.1 : 0.6,
-            transition: playing ? "height 0.1s" : "none",
+            height: `${h}px`,
+            opacity: playing ? 0.9 : 0.6,
+            transition: playing ? "height 0.12s" : "none",
           }}
         />
       ))}
