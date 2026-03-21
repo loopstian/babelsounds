@@ -1,0 +1,43 @@
+Create a new plain React application using Vite and Tailwind CSS. Do NOT use Next.js.
+
+I am building a web app called "Babelsounds". It is a retro-brutalist, cassette-punk audio generation tool for dead languages. 
+
+CRITICAL DESIGN RULES (Do not deviate):
+- No rounded corners anywhere. Everything is `rounded-none`.
+- The background color must be a gritty charcoal/black (use `#121212`).
+- All text, borders, and icons must be a sepia/cream color (use `#F0EAD6`).
+- Borders should be harsh and visible. Use `border-2 border-[#F0EAD6]`.
+- Add a subtle static noise/grain effect to the global background if possible.
+- Include Google Fonts in the index.html: 'VT323' (for terminal text) and 'Rubik Mono One' (for blocky headers).
+
+LAYOUT STRUCTURE:
+There is no traditional navbar. The UI consists of a Top Marquee and 3 vertically stacked "Hardware Drawers" (Accordions). Only one or two drawers should be open at a time to save space.
+
+1. The Top Marquee (Fixed Header)
+- A full-width `border-b-4 border-[#F0EAD6]` container.
+- Inside, a scrolling ticker or static block text that says: `>>> SYSTEM SECURE // BABELSOUNDS_V1.0 // ARCHIVE UPLINK ACTIVE <<<`. Use the 'VT323' font, uppercase, tracking-widest.
+
+2. The Drawer System (Main Workspace)
+Create a reusable React component called `RackDrawer`. It should have:
+- A clickable header row: Thick borders, a plus/minus ASCII toggle (e.g., `[+]` or `[-]`), a drawer number (e.g., `001 //`), and the title. 
+- When clicked, the content area snaps open (no smooth modern animations, just a harsh display toggle).
+
+Build these 3 specific drawers:
+
+DRAWER 001: ARCHIVE SCANNER (Research Phase)
+- When expanded, show a split-pane layout.
+- Left side (60% width): A terminal window. A blinking cursor `INPUT QUERY >_` and a placeholder text area for the user to type research topics (e.g., "Mesoamerican blood rituals"). Below it, a block of "Firecrawl output" text in 'VT323' font, with some words highlighted (black text on cream background) like the reference image.
+- Right side (40% width): A brutalist data panel showing placeholder stats like "DATA NODES FOUND: 402", "PHONETIC MATCH: 88%".
+
+DRAWER 002: LINGUISTIC SYNTHESIS (Generation Phase)
+- When expanded, show a 3-column grid mimicking a retro newspaper or government file.
+- Column 1: A harsh text area for "English Input".
+- Column 2: The "Decrypted Script". Use large, stacked outline fonts to display a generated fake word (like the "BREAKING NEWS" section in my reference).
+- Column 3: Hardware voice selectors. Instead of modern dropdowns, build them like harsh radio buttons or blocky clickable grids with Japanese/Katakana placeholder labels. A massive, inverted-color button at the bottom: `[ INITIATE SYNTHESIS ]`.
+
+DRAWER 003: AUDIO SEQUENCER (Sound Design Phase)
+- When expanded, this should take up significant height.
+- Top section: 3 brutalist sliders for "PITCH", "REVERB", "DISTORTION". Make the sliders look like ASCII art or hard brackets, e.g., `[======|    ]`.
+- Bottom section: The timeline. A wide, bordered box containing 2 placeholder audio tracks. Instead of normal waveforms, draw them using blocky, pixelated vertical bars. Add harsh `[ PLAY ]` and `[ MUTE ]` ASCII-style buttons next to each track.
+
+Please write the App.jsx and necessary components to make these accordion drawers functional, applying the strict `#121212` and `#F0EAD6` brutalist styling throughout.
