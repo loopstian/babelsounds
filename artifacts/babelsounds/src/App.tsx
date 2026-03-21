@@ -404,7 +404,19 @@ function RecordingScreen({
   const [phoneticScript, setPhoneticScript] = useState("");
   const [selectedDirectives, setSelectedDirectives] = useState<Directive[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const GLITCH_CHARS = "†∑Ω§≈∆ΓΞΨλφσπβθΛ∂∇∏∫≠±∞μ∈∉⊂⊃⊕⊗";
+
+  function randomGlitch(len: number) {
+    let out = "";
+    for (let i = 0; i < len; i++) {
+      out += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+      if (i > 0 && i % 6 === 0) out += " ";
+    }
+    return out;
+  }
 
   function toggleDirective(d: Directive) {
     setSelectedDirectives((prev) =>
@@ -413,9 +425,20 @@ function RecordingScreen({
   }
 
   function handleGenerateScript() {
-    if (!englishIntent.trim()) return;
+    if (!englishIntent.trim() || isGeneratingScript) return;
     const result = generateMockScript(englishIntent, selectedDirectives, language.id, language.typingGuide);
-    setPhoneticScript(result);
+    setIsGeneratingScript(true);
+    setPhoneticScript(randomGlitch(28));
+
+    const tickInterval = setInterval(() => {
+      setPhoneticScript(randomGlitch(28));
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(tickInterval);
+      setPhoneticScript(result);
+      setIsGeneratingScript(false);
+    }, 1500);
   }
 
   function handleGenerate() {
@@ -515,10 +538,10 @@ function RecordingScreen({
             {/* Generate Script button */}
             <button
               onClick={handleGenerateScript}
-              disabled={!englishIntent.trim()}
-              style={{ ...solidBtn, fontSize: "1rem", padding: "10px 16px", letterSpacing: "0.08em", opacity: !englishIntent.trim() ? 0.4 : 1, flexShrink: 0 }}
+              disabled={!englishIntent.trim() || isGeneratingScript}
+              style={{ ...solidBtn, fontSize: "1rem", padding: "10px 16px", letterSpacing: "0.08em", opacity: !englishIntent.trim() || isGeneratingScript ? 0.4 : 1, flexShrink: 0 }}
             >
-              [ Generate Script ]
+              {isGeneratingScript ? "[ DECRYPTING... ]" : "[ Generate Script ]"}
             </button>
 
             {/* Artistic Directives */}
@@ -550,12 +573,26 @@ function RecordingScreen({
             {/* The Native Script */}
             <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
               The Native Script (Editable)
+              {isGeneratingScript && <span style={{ marginLeft: "12px", color: "#F0EAD660", fontSize: "0.9rem" }}>— BUFFERING RAW DATA...</span>}
             </label>
             <textarea
+              readOnly={isGeneratingScript}
               placeholder="AI-generated phonetic script will appear here. You may edit it before generating audio."
               value={phoneticScript}
-              onChange={(e) => setPhoneticScript(e.target.value)}
-              style={{ width: "100%", flex: 1, minHeight: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.3rem", padding: "12px", resize: "none" }}
+              onChange={(e) => !isGeneratingScript && setPhoneticScript(e.target.value)}
+              style={{
+                width: "100%",
+                flex: 1,
+                minHeight: "80px",
+                background: isGeneratingScript ? "#0a0a0a" : "transparent",
+                border: `2px solid ${isGeneratingScript ? "#F0EAD650" : "#F0EAD6"}`,
+                color: isGeneratingScript ? "#F0EAD660" : "#F0EAD6",
+                fontFamily: "'VT323', monospace",
+                fontSize: "1.3rem",
+                padding: "12px",
+                resize: "none",
+                transition: "color 0.2s, border-color 0.2s",
+              }}
             />
 
             {/* Typing Guide */}
