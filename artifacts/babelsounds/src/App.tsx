@@ -4,16 +4,22 @@ import { useState, useRef, useEffect } from "react";
 
 type Screen = "archives" | "recording" | "soundscape";
 
+interface LexiconSample {
+  word: string;
+  type: string;
+  ipa: string;
+  meaning: string;
+}
+
 interface LanguageSignal {
   id: string;
   title: string;
-  strength: number;
-  description: string;
-  dna: { guttural: number; sibilant: number; vocalic: number };
-  why_match: string;
-  phonetic_sample: string;
-  fingerprint: string[];
-  voiceDescription: string;
+  matchScore: number;
+  lexiconSample: LexiconSample;
+  acousticConsensus: string;
+  phoneticInventory: string;
+  typingGuide: string;
+  sources: string[];
 }
 
 interface AudioClip {
@@ -63,94 +69,62 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
   {
     id: "arc_01",
     title: "Camazotz Ritual Phonetics",
-    strength: 94,
-    description:
-      "Sourced from the Popol Vuh and Dresden Codex, cross-referenced against acoustic reconstructions of Classic Maya ceremonial sites at Palenque. The Camazotz death-bat deity presided over Xibalba's blood-sacrifice chambers — phoneme clusters were vocalized in complete darkness, demanding extreme resonance to carry through stone corridors.",
-    dna: { guttural: 88, sibilant: 42, vocalic: 61 },
-    why_match:
-      "High consonant density aligns with this type of query. The subterranean acoustic environment of Xibalba favors deep, resonant tones over softer fricatives.",
-    voiceDescription: "An ancient, raspy female priestess speaking with deep sorrow and slow pacing, echoing through dark stone corridors.",
-    phonetic_sample: "XŌCH-\nYĀŌ-\nYŌTL",
-    fingerprint: [
-      "  /\\  /\\  /\\  /\\  ",
-      " /XX\\/XX\\/XX\\/XX\\ ",
-      "/____\\/____\\/____\\",
-      "|  CAMAZOTZ  |BAT|",
-      "|______|_____|___|",
-      " \\  XIBALBA  /    ",
-      "  \\__/\\__/\\__/    ",
-      "   |  |  |  |    ",
-      "_______________   ",
-    ],
+    matchScore: 94,
+    lexiconSample: {
+      word: "xōchiyāōyōtl",
+      type: "noun",
+      ipa: "/ʃoː.tʃi.jaː.oː.joːtɬ/",
+      meaning: "flowered war; a sacred ritual combat",
+    },
+    acousticConsensus: "Dominated by voiceless lateral affricates and long vowel sequences. Ritual vocalization occurred in subterranean chambers at Palenque, demanding extreme chest resonance and sustained nasal output. Consonant clusters were percussive and ejective, punctuating rhythmic chant cycles dedicated to the death-bat deity.",
+    phoneticInventory: "[ tɬ ] [ ʃ ] [ kʷ ] [ ʔ ] [ oː ]",
+    typingGuide: "Use hard consonants: 'tl', 'x' (as 'sh'), 'qu'. Favor long vowels 'oo', 'aa'. Avoid soft sounds like 'f', 'v', 'th'. End words with 'tl' or 'c'.",
+    sources: ["omniglot.com/writing/nahuatl", "cambridge.org/mesoamerican-linguistics", "famsi.org/research/phonology"],
   },
   {
     id: "arc_02",
     title: "Ennead Death Invocation",
-    strength: 81,
-    description:
-      "Recovered from papyrus scrolls (Spell 125, Book of the Dead) alongside acoustic modeling of the Hypostyle Hall at Karnak. The nine primordial Egyptian deities were invoked through sustained sibilant tones that induced resonance in the limestone chambers. Vowels were considered divine emanations, forbidden in written script but preserved in oral tradition.",
-    dna: { guttural: 34, sibilant: 91, vocalic: 78 },
-    why_match:
-      "Sustained fricative chains dominate this language's phoneme structure. The sacred silence intervals suggest a rhythm-based synthesis approach, well-suited for ceremonial pacing.",
-    voiceDescription: "A commanding male priest with booming resonance and sharp sibilant whispers, as if channeling the voice of Anubis himself.",
-    phonetic_sample: "ĒN-\nLIL-\nKI",
-    fingerprint: [
-      "===================",
-      "||  ENNEAD  GATE  ||",
-      "||_______________||",
-      "|| |   | |   | | ||",
-      "|| |___|_|___|_| ||",
-      "||  ANUBIS SCALE ||",
-      "||_______________||",
-      "=|||=====|||=====||",
-      "  MA'AT    THOTH  ",
-    ],
+    matchScore: 81,
+    lexiconSample: {
+      word: "šigaru",
+      type: "noun",
+      ipa: "/ʃiˈɡa.ru/",
+      meaning: "a bolt or lock; the seal of the underworld gate",
+    },
+    acousticConsensus: "Highly rhythmic, reliant on sustained sibilant fricatives and deep pharyngeal friction. Invocations were performed in the Hypostyle Hall at Karnak, where limestone columns amplified mid-range frequencies. Vowels were considered divine emanations — forbidden in script but preserved in oral priestly tradition through harmonic throat placement.",
+    phoneticInventory: "[ ʃ ] [ ħ ] [ ʕ ] [ sː ] [ aː ]",
+    typingGuide: "Use 'sh', 'kh', 'aa' extensively. Double consonants for emphasis ('ss', 'rr'). Use 'h' after vowels for pharyngeal depth. Avoid 'p', 'b', 'g'.",
+    sources: ["ucl.ac.uk/egyptology/phonetics", "jstor.org/ancient-egyptian-oral-tradition", "omniglot.com/writing/egyptian"],
   },
   {
     id: "arc_03",
     title: "Proto-Uralic Shamanic Drone",
-    strength: 73,
-    description:
-      "Reconstructed from Neolithic shaman burial sites in Western Siberia, cross-referenced with surviving Khanty and Selkup ceremonial recordings. This proto-language predates written record by 6,000 years. Characterized by sustained nasal drones and deep vowel harmonics — the earliest known precursors to throat-singing.",
-    dna: { guttural: 67, sibilant: 28, vocalic: 95 },
-    why_match:
-      "Extreme vowel richness — the highest harmonic overtone index in the archive. The nasal resonance pattern is unique to Siberian permafrost acoustics, suggesting a two-voice synthesis layer.",
-    voiceDescription: "A weathered old shaman humming through nasal drones, voice cracking with age, deeply meditative and hypnotic.",
-    phonetic_sample: "HA-\nAB-\nCUL",
-    fingerprint: [
-      "~~~~~~~~~~~~~~~~~~ ",
-      "~ URAL TUNDRA SIG ~",
-      "~~~~~~~~~~~~~~~~~~ ",
-      "  )  (  )  (  )   ",
-      " (\\  /)(\\  /)(\\   ",
-      "  \\_//  \\_//  \\_/ ",
-      "   |  DRONE  |    ",
-      "   |_________|    ",
-      "  /___________\\   ",
-    ],
+    matchScore: 73,
+    lexiconSample: {
+      word: "käläw",
+      type: "verb",
+      ipa: "/ˈkæ.læw/",
+      meaning: "to cross over; to journey between worlds",
+    },
+    acousticConsensus: "Characterized by sustained nasal drones and deep vowel harmonics — the earliest known precursors to Tuvan throat-singing. Reconstructed from Neolithic burial acoustics in Western Siberia. Vowel harmony governed all utterances, creating a hypnotic oscillation between front and back articulation that induced trance states in ceremonial contexts.",
+    phoneticInventory: "[ ŋ ] [ æ ] [ yː ] [ w ] [ kʰ ]",
+    typingGuide: "Use soft nasals: 'ng', 'n', 'm'. Favor rounded vowels 'ö', 'ü', 'ä'. Words should feel smooth and flowing. Avoid hard stops like 'k', 't', 'p' at word endings.",
+    sources: ["ling.helsinki.fi/uralic-reconstruction", "siberian-archives.ru/phonology", "cambridge.org/proto-uralic"],
   },
   {
     id: "arc_04",
     title: "Elamite Lamentation Cycle",
-    strength: 58,
-    description:
-      "Recovered from cuneiform tablets at Susa and Anshan. Elamite is one of the world's true language isolates — no confirmed relatives. Its lamentation genre featured antiphonal structure: a solo high priest vocalized the 'cry' motif, answered by temple singers using sustained low-register drones. A sound unheard for 2,500 years.",
-    dna: { guttural: 55, sibilant: 63, vocalic: 47 },
-    why_match:
-      "A balanced phoneme profile across all dimensions. The antiphonal structure suits layered track architecture, and its linguistic isolation means a uniquely pure sound with no outside influence.",
-    voiceDescription: "A terrifying, high-pitched screeching ancient warrior chanting battle cries with rhythmic fury and controlled rage.",
-    phonetic_sample: "TĒZ-\nCAT-\nLIP",
-    fingerprint: [
-      "+-----------------+",
-      "|  SUSA  ARCHIVE  |",
-      "+-----------------+",
-      "| >>> CUNEIFORM   |",
-      "| ||| ||| ||| ||| |",
-      "| --- --- --- --- |",
-      "| ELAMITE ISOLATE |",
-      "|  NO  RELATIVES  |",
-      "+-----------------+",
-    ],
+    matchScore: 58,
+    lexiconSample: {
+      word: "halmarrish",
+      type: "noun",
+      ipa: "/hal.ˈmar.riʃ/",
+      meaning: "the royal cry; a formal lament for the dead king",
+    },
+    acousticConsensus: "A language isolate with no confirmed relatives. Its lamentation genre featured antiphonal structure: a solo high priest vocalized the 'cry' motif, answered by temple singers using sustained low-register drones. Recovered from cuneiform tablets at Susa, the phoneme profile is balanced across gutturals, sibilants, and vowels — a uniquely pure sound with no outside influence.",
+    phoneticInventory: "[ ʃ ] [ r ] [ q ] [ tʼ ] [ a ]",
+    typingGuide: "Use hard consonants like 'q', 'k', 'sh', and short vowels 'a', 'i', 'u'. Double 'r' for trills. Avoid 'o' and 'e'. End words with 'sh' or a consonant cluster.",
+    sources: ["omniglot.com/writing/elamite", "iranicaonline.org/elamite-language", "penn.museum/cuneiform-archive"],
   },
 ];
 
@@ -165,21 +139,6 @@ function LanguageModal({
   onClose: () => void;
   onUse: (sig: LanguageSignal) => void;
 }) {
-  function ScaleBar({ leftLabel, rightLabel, value }: { leftLabel: string; rightLabel: string; value: number }) {
-    const filled = Math.round(value / 10);
-    return (
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginBottom: "5px" }}>
-          <span>{leftLabel}</span><span>{rightLabel}</span>
-        </div>
-        <div style={{ fontFamily: "monospace", fontSize: "1.2rem" }}>
-          <span style={{ color: "#F0EAD6" }}>{"■".repeat(filled)}</span>
-          <span style={{ color: "#F0EAD622" }}>{"■".repeat(10 - filled)}</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
@@ -187,33 +146,52 @@ function LanguageModal({
     >
       <div className="screen-fade-in" style={{ background: "#121212", border: "4px solid #F0EAD6", maxWidth: "680px", width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ background: "#F0EAD6", color: "#121212", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.06em" }}>
-          <span>Language Information</span>
+          <span>Research Dossier</span>
           <button onClick={onClose} style={{ background: "#121212", color: "#F0EAD6", border: "none", fontFamily: "'VT323', monospace", fontSize: "1.2rem", cursor: "pointer", padding: "2px 12px" }}>Close</button>
         </div>
         <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ borderBottom: "1px solid #F0EAD625", paddingBottom: "14px", display: "flex", alignItems: "baseline", gap: "16px", flexWrap: "wrap" }}>
             <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.05em" }}>{signal.title}</span>
-            <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Match: {signal.strength}%</span>
+            <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Match: {signal.matchScore}%</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            <div style={{ border: "2px solid #F0EAD6", padding: "14px" }}>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.08em" }}>Sound Character</div>
-              <pre style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", lineHeight: "1.35", color: "#F0EAD6", margin: 0 }}>{signal.fingerprint.join("\n")}</pre>
+
+          {/* The Artifact — Lexicon Sample */}
+          <div style={{ border: "2px solid #F0EAD6", padding: "20px" }}>
+            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.6rem", letterSpacing: "0.04em", marginBottom: "4px" }}>
+              {signal.lexiconSample.word}
             </div>
-            <div style={{ border: "2px solid #F0EAD6", padding: "14px" }}>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.08em" }}>Attributes</div>
-              <ScaleBar leftLabel="Harsh" rightLabel="Smooth" value={100 - signal.dna.guttural} />
-              <ScaleBar leftLabel="Fast" rightLabel="Slow" value={100 - signal.dna.sibilant} />
-              <ScaleBar leftLabel="Deep" rightLabel="High" value={100 - signal.dna.vocalic} />
+            <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.95rem", fontStyle: "italic", color: "#a09880", marginBottom: "10px" }}>
+              {signal.lexiconSample.type}
+            </div>
+            <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "1.3rem", color: "#8a9ab5", letterSpacing: "0.02em", marginBottom: "12px" }}>
+              {signal.lexiconSample.ipa}
+            </div>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.15rem", color: "#F0EAD6" }}>
+              {signal.lexiconSample.meaning}
             </div>
           </div>
+
+          {/* Acoustic Consensus & Phonetic Inventory */}
           <div style={{ border: "2px solid #F0EAD6" }}>
-            <div style={{ background: "#F0EAD608", borderBottom: "2px solid #F0EAD6", padding: "8px 16px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>Summary</div>
-            <div style={{ padding: "16px", fontFamily: "'VT323', monospace", fontSize: "1.15rem", lineHeight: "1.6", color: "#F0EAD6" }}>
-              <p style={{ margin: "0 0 12px 0" }}>{signal.description}</p>
-              <p style={{ margin: 0, color: "#a09880", fontSize: "1.05rem" }}>{signal.why_match}</p>
+            <div style={{ background: "#F0EAD608", borderBottom: "2px solid #F0EAD6", padding: "8px 16px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Acoustic Consensus
+            </div>
+            <div style={{ padding: "16px" }}>
+              <p style={{ margin: "0 0 16px 0", fontFamily: "'VT323', monospace", fontSize: "1.15rem", lineHeight: "1.6", color: "#F0EAD6" }}>
+                {signal.acousticConsensus}
+              </p>
+              <div style={{ borderTop: "2px solid #F0EAD620", paddingTop: "12px" }}>
+                <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>Prominent Sounds: </span>
+                <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", color: "#F0EAD6", letterSpacing: "0.06em" }}>{signal.phoneticInventory}</span>
+              </div>
             </div>
           </div>
+
+          {/* Data Lineage */}
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a0988060", lineHeight: "1.5" }}>
+            Sources verified across {signal.sources.length} domains: {signal.sources.join(", ")}
+          </div>
+
           <button
             onClick={() => onUse(signal)}
             style={{ ...solidBtn, fontSize: "1.2rem", padding: "15px", width: "100%", letterSpacing: "0.08em", border: "4px solid #F0EAD6" }}
@@ -330,7 +308,7 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
               {LANGUAGE_SIGNALS.map((sig, idx) => (
                 <div key={sig.id} style={{ display: "grid", gridTemplateColumns: "1fr 240px 100px", border: "2px solid #F0EAD6", borderBottom: idx === LANGUAGE_SIGNALS.length - 1 ? "2px solid #F0EAD6" : "none", padding: "14px 16px", alignItems: "center", background: "#121212" }}>
                   <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", letterSpacing: "0.04em" }}>{sig.title}</span>
-                  <span><MatchBar value={sig.strength} /></span>
+                  <span><MatchBar value={sig.matchScore} /></span>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
                     <button onClick={() => setInspecting(sig)} style={{ ...outlineBtn, fontSize: "1.05rem", padding: "6px 14px" }}>Details</button>
                   </div>
@@ -369,7 +347,7 @@ function RecordingScreen({
   onBack: () => void;
   onProceed: () => void;
 }) {
-  const [voicePrompt, setVoicePrompt] = useState(language.voiceDescription);
+  const [voicePrompt, setVoicePrompt] = useState(language.acousticConsensus);
   const [scriptPrompt, setScriptPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -465,10 +443,9 @@ function RecordingScreen({
               style={{ flex: 1, width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
             />
 
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", flexShrink: 0 }}>
-              Tone: {language.dna.guttural > 60 ? "Harsh" : "Smooth"} &nbsp;·&nbsp;
-              Pace: {language.dna.sibilant > 60 ? "Fast" : "Slow"} &nbsp;·&nbsp;
-              Depth: {language.dna.vocalic > 60 ? "Deep" : "High"}
+            <div style={{ border: "2px solid #F0EAD630", padding: "12px 14px", flexShrink: 0 }}>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Typing Guide</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD6", lineHeight: "1.5" }}>{language.typingGuide}</div>
             </div>
           </div>
         </div>

@@ -1,0 +1,39 @@
+"I need to refactor the **Archives/Discovery Screen** and the **Language Information Modal** to simulate a deep-web linguistic research tool (preparing for Firecrawl integration). 
+
+**1. Update the Mock Data Structure (The 'Research Payload'):**
+Update the mock array of `languageSignals` to include data that looks like it was scraped from academic linguistic sources. Each object must include:
+- `id`: A unique string.
+- `name`: (e.g., 'Akkadian Cuneiform Phonetics').
+- `matchScore`: Percentage.
+- `lexiconSample`: An object containing:
+    - `word`: The native word (e.g., 'šigaru').
+    - `type`: Part of speech (e.g., 'noun').
+    - `ipa`: The International Phonetic Alphabet transcription (e.g., '/ʃiˈɡa.ru/').
+    - `meaning`: The English translation.
+- `acousticConsensus`: A short paragraph summarizing how scholars believe it sounded (e.g., 'Highly rhythmic, reliant on ejective consonants and deep pharyngeal friction.').
+- `phoneticInventory`: A string of prominent sounds (e.g., '[ ʃ ] [ q ] [ tʼ ]').
+- `typingGuide`: A short instruction for the user on how to spell words to mimic this language (e.g., 'Use hard consonants like 'q', 'k', 'sh', and short vowels 'a, i, u'. Avoid 'o' and 'e'.').
+- `sources`: An array of mock URLs (e.g., `['omniglot.com', 'cambridge.org/linguistics']`).
+
+**2. Refactor the Information Modal (The Dossier):**
+When a user clicks 'Details' on a language, update the Modal layout:
+- **Remove the old 'Sound Character' ASCII block and the High/Low sliders.**
+- **Top Section (The Artifact):** 
+    - Display the `lexiconSample` in a clean, dictionary style.
+    - The `word` should be large and bold. 
+    - The `type` (e.g., *noun*) should be small and italicized.
+    - The `ipa` transcription should use a serif font (like 'Georgia' or 'Times New Roman') and a slightly contrasting color (like a muted steel blue or grey) to stand out from the brutalist theme. 
+    - Below this, show the English `meaning`.
+- **Middle Section (Acoustic Consensus & Inventory):**
+    - Display the `acousticConsensus` paragraph in the standard 'VT323' font.
+    - Below it, display the `phoneticInventory` prominently (e.g., `PROMINENT SOUNDS: [ ʃ ] [ q ] [ tʼ ]`).
+- **Bottom Section (Data Lineage):**
+    - A very small, muted text footer that says: `Sources verified across [number] domains:` followed by the `sources` array.
+- **Action Button:** Keep the large 'USE THIS LANGUAGE' button at the bottom.
+
+**3. Update the Handoff to Screen 2 (The Vocal Lab):**
+- When 'USE THIS LANGUAGE' is clicked, the `selectedLanguage` state must carry all this new data to Screen 2.
+- In Screen 2, under the 'What should the AI say?' text area, add a small, visually distinct helper block that displays the `selectedLanguage.typingGuide`. This acts as a 'cheat sheet' for the user.
+- Ensure the 'Voice Description' text area at the top of Screen 2 is pre-filled using the `acousticConsensus` text.
+
+**Keep the brutalist #121212 background and #F0EAD6 borders, but ensure the new dictionary-style IPA section looks distinctly academic and clean.**"
