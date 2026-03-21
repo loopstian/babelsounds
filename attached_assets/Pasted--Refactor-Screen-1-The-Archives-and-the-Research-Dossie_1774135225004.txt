@@ -1,0 +1,31 @@
+"Refactor **Screen 1 (The Archives)** and the **Research Dossier Modal** to act as a scientific triangulation engine pulling from Wikipedia, PHOIBLE, and Wiktionary.
+
+**1. Update the 'Search Result' Logic:**
+- Limit search results to a maximum of **2 high-confidence matches**.
+- Style the results as 'Recovered Signals' with a name and a 'Match Score' (e.g., 98%).
+
+**2. The 'Triangulated' Data Structure:**
+Update the mock data for each language signal to include these three specific sources:
+- **Wiktionary Data (The Lexicon):** A `word` (e.g., 'šigaru'), a `type` (e.g., 'noun'), a `meaning` (e.g., 'torture instrument'), and an `ipa` (e.g., '/ʃiˈɡa.ru/').
+- **PHOIBLE Data (The DNA):** A `phoneticInventory` array containing 5-8 specific IPA characters (e.g., `['ʃ', 'q', 'tʼ', 'ʕ', 'u']`).
+- **Wikipedia Data (The Lore):** An `acousticConsensus` (historical/sound summary) and a `culturalContext` (time period/region).
+- **The Handoff Payload:** A `vocalBlueprint` (a descriptive string for ElevenLabs) and a `typingGuide` (simple rules for the user).
+
+**3. Refactor the Information Modal (The Dossier):**
+- **Fixed Header:** 
+    - Keep the title and match % on the left.
+    - **Top Right:** Place the `[ USE THIS LANGUAGE ]` button immediately to the left of the `[ CLOSE ]` button.
+    - Make this header sticky (`sticky top-0`) with a solid `#121212` background and a bottom border.
+- **Scrollable Body (The Report):**
+    - **Section 1: The Dictionary Entry (Wiktionary style):** Display the large bold `word`, the italicized `type`, the `ipa` (using a serif font like 'Georgia' in a muted blue-grey color), and the `meaning`.
+    - **Section 2: Phonetic DNA (PHOIBLE style):** Label this 'PHONOLOGICAL INVENTORY'. Display the `phoneticInventory` IPA characters in a grid of small bordered boxes.
+    - **Section 3: Cultural Consensus (Wikipedia style):** Display the `culturalContext` and the `acousticConsensus` as clean paragraphs of text.
+    - **Section 4: Verification Footer:** List the 3 sources: `Verified via Wikipedia, PHOIBLE, and Wiktionary.`
+
+**4. The 'Synthesis' Bridge Logic:**
+- When 'USE THIS LANGUAGE' is clicked:
+    1. Trigger the 'Transition' screen (the terminal glitch animation we built).
+    2. Pass the `vocalBlueprint` (the descriptive prompt) to pre-fill the **Voice Description** box in Screen 2.
+    3. Pass the `typingGuide` to populate the **Typing Guide** help-block in Screen 2.
+
+**Please maintain the strict brutalist styling (sharp corners, #121212 / #F0EAD6). Ensure the Dictionary Entry looks like a high-quality academic paper inside the dark terminal environment.**"
