@@ -1,0 +1,45 @@
+"Refactor the application into a three-screen linear workflow. The app should now track a `currentScreen` state with three stages: 'archives', 'recording', and 'soundscape'.
+
+**1. Global State & Library Logic:**
+- Create a `clipLibrary` state (an array of audio clips). 
+- When a user generates audio in the second screen, it should be saved into this library with a name and a duration.
+
+**2. SCREEN 1: DISCOVERY (The Archives)**
+- Keep the current minimalist search and 'Language Information' modal.
+- Transition: Clicking 'Use this language' sets the `selectedLanguage` and moves the user to the **Recording** screen.
+
+**3. SCREEN 2: RECORDING (The Vocal Lab)**
+- **Header:** Show the Active Language and a 'Back' button.
+- **Layout:** Split the screen into two vertical halves.
+- **Left Side (The Input):** 
+    - A simple text area: 'What should the AI say?'
+    - A 'Generate Audio' button.
+- **Right Side (The Clip Library):** 
+    - A list of all generated clips.
+    - Each clip should show its name, a small play button, and a 'Delete' button.
+- **Bottom Action:** A large button: 'Proceed to Soundscape'.
+
+**4. SCREEN 3: SOUNDSCAPE (The Cinematic Mixer)**
+- This is the final assembly screen.
+- **The Timeline (Top Section):**
+    - Create two horizontal tracks with harsh borders. 
+    - **Track 1: Voices.**
+    - **Track 2: Atmosphere.**
+    - Use a simple horizontal ruler at the top showing time (0s, 5s, 10s...).
+    - **Interaction:** Allow users to 'Add' a clip from the library onto the Voice Track. Represent clips as solid cream-colored blocks (no waveforms) with the name of the clip inside.
+- **Atmosphere Generator (Bottom Section):**
+    - A text input: 'Describe the background atmosphere (e.g., haunting desert wind, deep metallic drones).'
+    - A 'Generate Atmosphere' button (placeholder for ElevenLabs Music API).
+    - Once generated, this atmosphere clip appears on **Track 2**.
+- **Master Controls:**
+    - A 'Play All' button that plays the combined tracks.
+    - An 'Export Composition' button.
+    - A 'Back to Recording' button.
+
+**5. Visual Style Refinement:**
+- Maintain the #121212 and #F0EAD6 palette.
+- Keep all corners sharp (`rounded-none`) and borders thick (`border-2`).
+- Ensure the transitions between the three screens are instant and clean. 
+- Use the 'VT323' font for all UI text to maintain the professional, minimalist look.
+
+**Please refactor the app structure so that the user flows naturally from searching for a language, to recording several phrases, to finally mixing them into a cinematic soundscape.**"
