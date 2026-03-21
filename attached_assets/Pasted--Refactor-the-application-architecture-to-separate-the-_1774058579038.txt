@@ -1,0 +1,33 @@
+"Refactor the application architecture to separate the experience into two distinct screens: **The Archives** and **The Studio**. 
+
+**1. State Management Update:**
+- Create a global state to track `currentScreen` (either 'archives' or 'studio') and `selectedLanguage` (the data object for the chosen language).
+- By default, the app should open to **The Archives**.
+
+**2. SCREEN 1: THE ARCHIVES (Full-Screen Research)**
+- This screen should be a dedicated, minimalist search experience.
+- **Centerpiece:** A large, single-line search input in the middle of the screen. 
+    - Label above: 'What ancient world or sound are you looking for?'
+    - Placeholder: 'e.g. Ancient Greek, deep desert chants, whispering spirits...'
+- **Results Area:** When a search is performed, display the results table (Name, Match, Action) below the search bar.
+- **The Modal:** Keep the 'Language Information' modal logic. 
+- **The Transition:** When the user clicks 'Use this language' inside the modal:
+    1. Set the `selectedLanguage` state.
+    2. Transition the `currentScreen` to 'studio'.
+
+**3. SCREEN 2: THE STUDIO (Production Workspace)**
+- This screen should only appear after a language is selected.
+- **Top Header:**
+    - Left: 'Active Language: [Name of Selected Language]'
+    - Right: A 'Change Language' button (which returns the user to the Archives).
+- **The Drawers:** Only show two drawers on this screen now:
+    1. **1. Create the Voice** (formerly Drawer 2).
+    2. **2. Refine the Sound** (formerly Drawer 3).
+- Ensure the 'Pronunciation Guide' in the first drawer is updated based on the `selectedLanguage`.
+
+**4. Visual Refinement:**
+- **Archives Screen:** Make it feel cinematic. Use more whitespace. Keep the #121212 and #F0EAD6 palette. 
+- **Transitions:** Use a simple 'snap' or a quick fade-in/out between screens (no slow animations).
+- **Navigation:** Remove the marquee from the Studio screen; keep it only on the Archives screen as a subtle footer or header element.
+
+**Please refactor the components so that the Archives feels like a deep research tool and the Studio feels like a focused audio laboratory.**"
