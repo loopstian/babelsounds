@@ -347,6 +347,43 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
 
 const PHONEME_FRAGMENTS = ["XŌCH", "YĀŌYŌTL", "ĒNLIL", "KULABBA", "HAABCUL", "TĒZCATLIP", "XIBALBA", "ANUBIS", "PTAH", "ENLIL", "SHAMASH", "NERGAL"];
 
+const LANGUAGE_PHONEME_POOLS: Record<string, string[][]> = {
+  arc_01: [["Xooc'haa", "Tla-quoo-tziin", "Maa'ya'tl", "Xōch-uitl"], ["Yāōyōtl!", "Tēzcatlip-ooc!", "Xibalba-tl!"], ["Quoo-maal", "Āōtl-xōch", "Tla-maa-tl"]],
+  arc_02: [["Shaakha-raa", "Kh'aabu-sset", "Haarr-shenu"], ["SHAAK-RHAAH!", "KHUUN-SSETH!", "HARRR-AABU!"], ["sh'aa... kha-raa...", "haarr... sseenu..."]],
+  arc_03: [["Käläw-öng", "Nüm-ängäl", "Wäng-äläm-ö"], ["NGÄL-ÖM! KÄLÄW!", "WÄNG-NÜM!"], ["ngäl... öm... käläw..."]],
+  arc_04: [["Halmar-rish", "Qutti-kash", "Shu-rriqan"], ["HALMAR-RISH!", "QUUT-TISH! KAASH!"], ["hal... mar-rish...", "shu... rriqan..."]],
+};
+
+const DIRECTIVE_LABELS = ["WHISPERED", "SHOUTED", "CHANTED", "BREATHLESS"] as const;
+type Directive = typeof DIRECTIVE_LABELS[number];
+
+function generateMockScript(
+  intent: string,
+  directives: Directive[],
+  languageId: string,
+  typingGuide: string
+): string {
+  // TODO: LLM Prompt to generate phonetics based on:
+  // Intent: {intent}
+  // Modifiers: {directives}
+  // Rules: {typingGuide}
+  const pool = LANGUAGE_PHONEME_POOLS[languageId] ?? LANGUAGE_PHONEME_POOLS["arc_01"];
+  const isShouted = directives.includes("SHOUTED");
+  const isWhispered = directives.includes("WHISPERED");
+  const isChanted = directives.includes("CHANTED");
+  const isBreathless = directives.includes("BREATHLESS");
+
+  const base = isShouted ? pool[1] ?? pool[0] : isWhispered ? pool[2] ?? pool[0] : pool[0];
+  const picks = [base[Math.floor(Math.random() * base.length)], base[Math.floor(Math.random() * base.length)]];
+  const unique = [...new Set(picks)];
+
+  let result = unique.join(isBreathless ? " — " : isChanted ? " / " : " ");
+  if (isChanted) result = `${result} / ${unique[0]}`;
+  if (isBreathless) result = result.split("").join("").replace(/([aeiouāōūæäö])/gi, "$1-");
+  if (isWhispered && !result.includes("...")) result = result + "...";
+  return result;
+}
+
 function RecordingScreen({
   language,
   clipLibrary,
@@ -363,30 +400,43 @@ function RecordingScreen({
   onProceed: () => void;
 }) {
   const [voicePrompt, setVoicePrompt] = useState(language.acousticConsensus);
-  const [scriptPrompt, setScriptPrompt] = useState("");
+  const [englishIntent, setEnglishIntent] = useState("");
+  const [phoneticScript, setPhoneticScript] = useState("");
+  const [selectedDirectives, setSelectedDirectives] = useState<Directive[]>([]);
   const [generating, setGenerating] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
+  function toggleDirective(d: Directive) {
+    setSelectedDirectives((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+    );
+  }
+
+  function handleGenerateScript() {
+    if (!englishIntent.trim()) return;
+    const result = generateMockScript(englishIntent, selectedDirectives, language.id, language.typingGuide);
+    setPhoneticScript(result);
+  }
+
   function handleGenerate() {
-    if (!scriptPrompt.trim() || generating) return;
+    if (!phoneticScript.trim() || generating) return;
     setGenerating(true);
     setTimeout(() => {
       // TODO: ElevenLabs API Integration
       // client.textToVoice.design({
-      //   text: scriptPrompt,
+      //   text: phoneticScript,
       //   voiceDescription: voicePrompt,
       //   outputFormat: "mp3_22050_32"
       // });
       const fragment = PHONEME_FRAGMENTS[Math.floor(Math.random() * PHONEME_FRAGMENTS.length)];
       const duration = Math.floor(Math.random() * 6) + 3;
-      const words = scriptPrompt.trim().split(" ").slice(0, 4).join(" ");
+      const words = phoneticScript.trim().split(" ").slice(0, 4).join(" ");
       onAddClip({
         id: `clip_${Date.now()}`,
         name: words.length > 0 ? `${words} (${fragment})` : `${language.title} — Phrase ${clipLibrary.length + 1}`,
         duration,
       });
       setGenerating(false);
-      setScriptPrompt("");
     }, 1200);
   }
 
@@ -426,8 +476,8 @@ function RecordingScreen({
             </div>
             <button
               onClick={handleGenerate}
-              disabled={generating || !scriptPrompt.trim()}
-              style={{ ...solidBtn, fontSize: "1.1rem", padding: "10px 20px", flexShrink: 0, opacity: generating || !scriptPrompt.trim() ? 0.45 : 1 }}
+              disabled={generating || !phoneticScript.trim()}
+              style={{ ...solidBtn, fontSize: "1.1rem", padding: "10px 20px", flexShrink: 0, opacity: generating || !phoneticScript.trim() ? 0.45 : 1 }}
             >
               {generating ? "Generating..." : "Generate Audio"}
             </button>
@@ -435,7 +485,9 @@ function RecordingScreen({
 
           <div style={{ borderTop: "2px solid #F0EAD630" }} />
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, minHeight: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", flex: 1, minHeight: 0, overflowY: "auto" }}>
+
+            {/* Voice Description */}
             <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
               Voice Description
             </label>
@@ -443,25 +495,74 @@ function RecordingScreen({
               placeholder="Describe the speaker (e.g., A raspy old man, a booming giant...)"
               value={voicePrompt}
               onChange={(e) => setVoicePrompt(e.target.value)}
-              style={{ flex: 1, width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
+              style={{ width: "100%", height: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "12px", resize: "none", flexShrink: 0 }}
             />
 
             <div style={{ borderTop: "2px solid #F0EAD620", flexShrink: 0 }} />
 
+            {/* The Intent */}
             <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
-              What should the AI say?
+              The Intent (English)
             </label>
             <textarea
-              placeholder="Type a phrase to vocalize..."
-              value={scriptPrompt}
-              onChange={(e) => setScriptPrompt(e.target.value)}
-              style={{ flex: 1, width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
+              placeholder="Describe the emotion, action, or meaning. e.g., A desperate plea to the gods, a violent war cry, a slow mournful chant..."
+              value={englishIntent}
+              onChange={(e) => setEnglishIntent(e.target.value)}
+              style={{ width: "100%", height: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.15rem", padding: "12px", resize: "none", flexShrink: 0 }}
             />
 
+            {/* Generate Script button */}
+            <button
+              onClick={handleGenerateScript}
+              disabled={!englishIntent.trim()}
+              style={{ ...solidBtn, fontSize: "1rem", padding: "10px 16px", letterSpacing: "0.08em", opacity: !englishIntent.trim() ? 0.4 : 1, flexShrink: 0 }}
+            >
+              [ Generate Script ]
+            </button>
+
+            {/* Artistic Directives */}
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", flexShrink: 0 }}>
+              {DIRECTIVE_LABELS.map((d) => {
+                const active = selectedDirectives.includes(d);
+                return (
+                  <button
+                    key={d}
+                    onClick={() => toggleDirective(d)}
+                    style={{
+                      background: active ? "#F0EAD6" : "transparent",
+                      color: active ? "#121212" : "#F0EAD6",
+                      border: "2px solid #F0EAD6",
+                      fontFamily: "'VT323', monospace",
+                      fontSize: "1rem",
+                      letterSpacing: "0.06em",
+                      padding: "6px 14px",
+                      cursor: "pointer",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* The Native Script */}
+            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
+              The Native Script (Editable)
+            </label>
+            <textarea
+              placeholder="AI-generated phonetic script will appear here. You may edit it before generating audio."
+              value={phoneticScript}
+              onChange={(e) => setPhoneticScript(e.target.value)}
+              style={{ width: "100%", flex: 1, minHeight: "80px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.3rem", padding: "12px", resize: "none" }}
+            />
+
+            {/* Typing Guide */}
             <div style={{ border: "2px solid #F0EAD630", padding: "12px 14px", flexShrink: 0 }}>
               <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Typing Guide</div>
               <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD6", lineHeight: "1.5" }}>{language.typingGuide}</div>
             </div>
+
           </div>
         </div>
 

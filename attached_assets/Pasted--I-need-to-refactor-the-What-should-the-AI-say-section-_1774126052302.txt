@@ -1,0 +1,39 @@
+"I need to refactor the **'What should the AI say?'** section in **Screen 2 (The Vocal Lab)** to act as an AI-assisted translation and expression tool, rather than a manual phonetic input.
+
+**1. Split the Input Section:**
+- Replace the single 'What should the AI say?' text area with a two-step generation UI.
+- **Top Box (The Intent):**
+    - Label: `THE INTENT (ENGLISH)`
+    - Placeholder: `Describe the emotion, action, or meaning. e.g., A desperate plea to the gods, a violent war cry, a slow mournful chant...`
+    - Bind this to a state called `englishIntent`.
+- **Bottom Box (The Phonetic Script):**
+    - Label: `THE NATIVE SCRIPT (EDITABLE)`
+    - This box will display the AI-generated phonetic translation, but the user must be able to manually edit the text before sending it to ElevenLabs.
+    - Bind this to a state called `phoneticScript`.
+
+**2. Add Artistic Directives (Modifiers):**
+- Between the Intent box and the Script box, add a horizontal row of 4 minimalist, clickable toggle buttons (styled as harsh rectangles with uppercase text): 
+    `[ WHISPERED ]`  `[ SHOUTED ]`  `[ CHANTED ]`  `[ BREATHLESS ]`
+- Bind these to a `selectedDirectives` array state. Users can select multiple.
+
+**3. The 'Translate' Action (Mock AI Handoff):**
+- Add a new button inside or directly below the Intent box: `[ GENERATE SCRIPT ]`.
+- When clicked, create a mock function that simulates an LLM translation.
+- **The Mock Logic:** The function should take the `englishIntent`, the `selectedDirectives`, and the `selectedLanguage.typingGuide` (from Phase 1), and output a fake, phonetically appropriate string into the `phoneticScript` box. 
+    - *Example output:* If the intent is 'A war cry' and the language is 'Camazotz', output something like: `'Xooc'haa! Tla-quoo-tziin! Maa'ya'tl!'`
+- Add a code comment showing where the real LLM call will go:
+  ```javascript
+  // TODO: LLM Prompt to generate phonetics based on:
+  // Intent: {englishIntent}
+  // Modifiers: {selectedDirectives}
+  // Rules: {selectedLanguage.typingGuide}
+  ```
+
+**4. Update the 'Generate Audio' Action:**
+- The main `GENERATE AUDIO` button (in the top right header) must now explicitly use the `phoneticScript` state as its input for the ElevenLabs API, NOT the `englishIntent`.
+
+**5. UI/UX Refinement:**
+- Keep the `Typing Guide` cheat sheet visible at the very bottom of the left column so the user can reference the rules if they choose to manually edit the generated `phoneticScript`.
+- Maintain the strict brutalist styling (#121212 background, #F0EAD6 text/borders, VT323 font).
+
+**Please update the layout so the user feels like a cinematic director guiding an ancient performance, rather than a data-entry clerk typing fake syllables.**"
