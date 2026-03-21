@@ -252,3 +252,21 @@ input[type="range"]::-moz-range-thumb {
   animation: scanline 8s linear infinite;
   pointer-events: none;
 }
+
+.panel-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #F0EAD630 transparent;
+}
+
+.panel-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-scroll::-webkit-scrollbar-thumb {
+  background: #F0EAD630;
+}

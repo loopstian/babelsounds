@@ -446,7 +446,7 @@ function RecordingScreen({
   }
 
   return (
-    <div className="screen-fade-in" style={{ minHeight: "100vh", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
+    <div className="screen-fade-in" style={{ height: "100vh", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div style={{ borderBottom: "4px solid #F0EAD6", padding: "0 0 0 0", display: "flex", alignItems: "stretch", minHeight: "60px", flexShrink: 0 }}>
         <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back</button>
@@ -468,8 +468,10 @@ function RecordingScreen({
       {/* Two-column body */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 0 }}>
         {/* Left — Input */}
-        <div style={{ borderRight: "4px solid #F0EAD6", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+        <div style={{ borderRight: "4px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+          {/* Fixed panel header */}
+          <div style={{ padding: "24px 32px 16px", background: "#121212", flexShrink: 0, borderBottom: "2px solid #F0EAD620", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
             <div>
               <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "4px" }}>The Vocal Lab</div>
               <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#a09880" }}>Design a voice and script phrases in {language.title}</div>
@@ -483,9 +485,8 @@ function RecordingScreen({
             </button>
           </div>
 
-          <div style={{ borderTop: "2px solid #F0EAD630" }} />
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px", flex: 1, minHeight: 0, overflowY: "auto" }}>
+          {/* Scrollable body */}
+          <div className="panel-scroll" style={{ flex: 1, padding: "20px 32px 32px", display: "flex", flexDirection: "column", gap: "14px" }}>
 
             {/* Voice Description */}
             <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
@@ -575,7 +576,7 @@ function RecordingScreen({
 
           <div style={{ borderTop: "2px solid #F0EAD630" }} />
 
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0" }}>
+          <div className="panel-scroll" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0" }}>
             {clipLibrary.length === 0 && (
               <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", padding: "24px 0", textAlign: "center", border: "2px dashed #F0EAD630" }}>
                 No clips yet. Generate audio to build your library.
