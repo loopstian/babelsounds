@@ -518,12 +518,30 @@ function SoundscapeScreen({
   const [generatingAtmosphere, setGeneratingAtmosphere] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [atmosphereClips, setAtmosphereClips] = useState<AudioClip[]>([]);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(true);
 
+  const LABEL_W = 120;
   const trackWidth = TIMELINE_DURATION * PX_PER_SEC;
   const allSidebarClips = [...clipLibrary, ...atmosphereClips];
 
-  function handleDrop(trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
+  function calcStartTime(e: React.DragEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
+    return Math.max(0, Math.min(Math.floor(x / PX_PER_SEC), TIMELINE_DURATION - 1));
+  }
+
+  function handleTrackDrop(trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
+    const moveData = e.dataTransfer.getData("application/track-move");
+    if (moveData) {
+      try {
+        const { id, originalDuration } = JSON.parse(moveData) as { id: string; originalDuration: number };
+        const maxStart = Math.max(0, TIMELINE_DURATION - originalDuration);
+        const newStart = Math.min(calcStartTime(e), maxStart);
+        trackSetter((prev) => prev.map((c) => c.id === id ? { ...c, startTime: newStart, duration: originalDuration } : c));
+      } catch { return; }
+      return;
+    }
     const clipData = e.dataTransfer.getData("application/clip");
     if (!clipData) return;
     try {
@@ -531,18 +549,14 @@ function SoundscapeScreen({
       const name = typeof parsed.name === "string" ? parsed.name : "";
       const duration = typeof parsed.duration === "number" && parsed.duration > 0 ? parsed.duration : 0;
       if (!name || !duration) return;
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
-      const startTime = Math.max(0, Math.min(Math.floor(x / PX_PER_SEC), TIMELINE_DURATION - 1));
+      const startTime = calcStartTime(e);
       const clampedDuration = Math.min(duration, TIMELINE_DURATION - startTime);
       if (clampedDuration <= 0) return;
       trackSetter((prev) => [
         ...prev,
         { id: `tc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name, startTime, duration: clampedDuration },
       ]);
-    } catch {
-      return;
-    }
+    } catch { return; }
   }
 
   function handleGenerateAtmosphere() {
@@ -588,64 +602,74 @@ function SoundscapeScreen({
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* ── Clip Library Sidebar ── */}
-        <div style={{ width: "256px", flexShrink: 0, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", background: "#0d0d0d" }}>
-          <div style={{ padding: "14px 16px", borderBottom: "2px solid #F0EAD6", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Clip Library
-          </div>
-          <div style={{ padding: "10px 16px 6px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", letterSpacing: "0.06em" }}>
-            Drag clips onto a track
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
-            {allSidebarClips.length === 0 && (
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "16px 8px", textAlign: "center", border: "2px dashed #F0EAD625" }}>
-                No clips yet.
-              </div>
-            )}
-            {allSidebarClips.map((clip) => (
-              <div
-                key={clip.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration }));
-                  e.dataTransfer.effectAllowed = "copy";
-                }}
-                style={{
-                  border: "2px solid #F0EAD6",
-                  background: "#121212",
-                  padding: "10px 12px",
-                  marginBottom: "6px",
-                  cursor: "grab",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  userSelect: "none",
-                }}
-              >
-                <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", flexShrink: 0, color: "#a09880" }}>▶</span>
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s</div>
+        {isLibraryOpen && (
+          <div style={{ width: "256px", flexShrink: 0, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", background: "#0d0d0d" }}>
+            <div style={{ padding: "14px 16px", borderBottom: "2px solid #F0EAD6", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Clip Library
+            </div>
+            <div style={{ padding: "10px 16px 6px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", letterSpacing: "0.06em" }}>
+              Drag clips onto a track
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+              {allSidebarClips.length === 0 && (
+                <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "16px 8px", textAlign: "center", border: "2px dashed #F0EAD625" }}>
+                  No clips yet.
                 </div>
-              </div>
-            ))}
+              )}
+              {allSidebarClips.map((clip) => (
+                <div
+                  key={clip.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration }));
+                    e.dataTransfer.effectAllowed = "copy";
+                  }}
+                  style={{
+                    border: "2px solid #F0EAD6",
+                    background: "#121212",
+                    padding: "10px 12px",
+                    marginBottom: "6px",
+                    cursor: "grab",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    userSelect: "none",
+                  }}
+                >
+                  <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", flexShrink: 0, color: "#a09880" }}>▶</span>
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
+                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Timeline + Atmosphere area ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
           {/* Timeline */}
           <div style={{ padding: "24px", flexShrink: 0 }}>
-            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1rem", letterSpacing: "0.08em", marginBottom: "16px" }}>
-              THE TIMELINE
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
+              <button
+                onClick={() => setIsLibraryOpen((p) => !p)}
+                style={{ ...outlineBtn, fontSize: "1rem", padding: "6px 14px" }}
+              >
+                {isLibraryOpen ? "[<] Close Library" : "[>] Open Library"}
+              </button>
+              <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1rem", letterSpacing: "0.08em" }}>
+                THE TIMELINE
+              </span>
             </div>
 
             <div style={{ border: "2px solid #F0EAD6", overflow: "hidden" }}>
               {/* Time ruler */}
-              <div style={{ display: "flex", borderBottom: "2px solid #F0EAD6", background: "#0d0d0d" }}>
-                <div style={{ minWidth: "100px", borderRight: "2px solid #F0EAD6", padding: "6px 12px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase" }}>
+              <div style={{ display: "grid", gridTemplateColumns: `${LABEL_W}px 1fr`, borderBottom: "2px solid #F0EAD6", background: "#0d0d0d" }}>
+                <div style={{ borderRight: "2px solid #F0EAD6", padding: "6px 12px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase" }}>
                   Track
                 </div>
-                <div style={{ overflowX: "auto", flex: 1 }}>
+                <div style={{ overflowX: "auto" }}>
                   <div style={{ width: `${trackWidth}px`, position: "relative", height: "28px" }}>
                     {TIME_MARKERS.map((t) => (
                       <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
@@ -660,21 +684,21 @@ function SoundscapeScreen({
               {/* Track 1: Voices */}
               <TrackRow
                 label="Voices"
+                labelWidth={LABEL_W}
                 trackWidth={trackWidth}
                 clips={voiceTrack}
                 onRemoveClip={(id) => setVoiceTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleDrop(setVoiceTrack, e)}
-                isPlaying={isPlaying}
+                onDrop={(e) => handleTrackDrop(setVoiceTrack, e)}
               />
 
               {/* Track 2: Atmosphere */}
               <TrackRow
                 label="Atmosphere"
+                labelWidth={LABEL_W}
                 trackWidth={trackWidth}
                 clips={atmosphereTrack}
                 onRemoveClip={(id) => setAtmosphereTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleDrop(setAtmosphereTrack, e)}
-                isPlaying={isPlaying}
+                onDrop={(e) => handleTrackDrop(setAtmosphereTrack, e)}
               />
             </div>
           </div>
@@ -726,53 +750,54 @@ function SoundscapeScreen({
   );
 }
 
-// TrackRow sub-component with drag-and-drop
 function TrackRow({
   label,
+  labelWidth,
   trackWidth,
   clips,
   onRemoveClip,
   onDrop,
-  isPlaying,
 }: {
   label: string;
+  labelWidth: number;
   trackWidth: number;
   clips: TrackClip[];
   onRemoveClip: (id: string) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-  isPlaying: boolean;
 }) {
   const [dragOver, setDragOver] = useState(false);
 
   return (
-    <div style={{ display: "flex", borderTop: "2px solid #F0EAD6", minHeight: "72px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: `${labelWidth}px 1fr`, borderTop: "2px solid #F0EAD6", minHeight: "72px" }}>
       {/* Label column */}
-      <div style={{ minWidth: "100px", borderRight: "2px solid #F0EAD6", padding: "10px 12px", display: "flex", alignItems: "center", background: "#0d0d0d", flexShrink: 0 }}>
+      <div style={{ borderRight: "2px solid #F0EAD6", padding: "10px 12px", display: "flex", alignItems: "center", background: "#0d0d0d" }}>
         <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
       </div>
       {/* Track area (drop target) */}
       <div
         style={{
-          flex: 1,
           overflowX: "auto",
           background: dragOver ? "rgba(240, 234, 214, 0.08)" : "#0a0a0a",
           position: "relative",
           minHeight: "72px",
           transition: "background 0.15s",
         }}
-        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDragOver(true); }}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { setDragOver(false); onDrop(e); }}
       >
         <div style={{ width: `${trackWidth}px`, height: "100%", position: "relative" }}>
-          {/* Grid lines */}
           {TIME_MARKERS.map((t) => (
             <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, width: "1px", background: "#F0EAD610" }} />
           ))}
-          {/* Clip blocks */}
           {clips.map((clip) => (
             <div
               key={clip.id}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/track-move", JSON.stringify({ id: clip.id, originalDuration: clip.duration }));
+                e.dataTransfer.effectAllowed = "move";
+              }}
               style={{
                 position: "absolute",
                 left: `${clip.startTime * PX_PER_SEC}px`,
@@ -783,16 +808,41 @@ function TrackRow({
                 border: "2px solid #121212",
                 display: "flex",
                 alignItems: "center",
-                padding: "0 8px",
+                padding: "0 22px 0 8px",
                 overflow: "hidden",
-                cursor: "pointer",
+                cursor: "grab",
               }}
-              title={`${clip.name} — click to remove`}
-              onClick={() => onRemoveClip(clip.id)}
+              title={clip.name}
             >
-              <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#121212", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "0.04em" }}>
+              <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#121212", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "0.04em", flex: 1 }}>
                 {clip.name}
               </span>
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onRemoveClip(clip.id); }}
+                draggable={false}
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  right: "2px",
+                  width: "18px",
+                  height: "18px",
+                  background: "#121212",
+                  color: "#F0EAD6",
+                  border: "1px solid #F0EAD680",
+                  fontFamily: "'VT323', monospace",
+                  fontSize: "0.85rem",
+                  lineHeight: "1",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                }}
+                title="Remove clip"
+              >
+                x
+              </button>
             </div>
           ))}
         </div>
