@@ -1,0 +1,37 @@
+"Refactor **Drawer 001 (Archive Scanner)** to implement the 'Acoustic Archaeology' research workflow. 
+
+**1. The Signal Data Structure:**
+Create a mock array of 'Language Signals' (at least 3). Each signal should have:
+- `id` (e.g., SIGNAL_ARC_01)
+- `title` (e.g., 'Camazotz Ritual Phonetics')
+- `strength` (Percentage 0-100)
+- `description` (A paragraph explaining the historical/mythological source found by Firecrawl).
+- `dna` (An object with scores for 'Guttural', 'Sibilant', and 'Vocalic').
+- `why_match` (A clinical analysis sentence explaining why it fits the user's prompt).
+
+**2. Drawer 001 UI (The Scanner):**
+- Inside the expanded Drawer 001, show a vertical list of these 'Signals'.
+- Each list item should look like a data entry: `[ID] - [TITLE] - [STRENGTH %]`.
+- Use a blocky, pixelated progress bar to visualize the `strength`.
+- Add an `[ INSPECT ]` button to each row.
+
+**3. The Floating Terminal (The Research Modal):**
+- When `[ INSPECT ]` is clicked, open a centered Pop-up Modal. 
+- **Modal Styling:** 
+    - Harsh 4px border (`border-4 border-[#F0EAD6]`).
+    - Background is the same `#121212`.
+    - A header bar with `[X] CLOSE_BUFFER` and a title like `DECRYPTION_DOSSIER // [ID]`.
+- **Modal Content:**
+    - **Top Section:** An ASCII-art 'Visual Fingerprint' (a unique arrangement of symbols like `/, \, |, -, _`) that represents the language's unique 'shape'.
+    - **Middle Section (The DNA):** A table or list showing the 'Linguistic Profile'. Use small horizontal bars `[■■■□□]` to show scores for Guttural, Sibilant, and Vocalic.
+    - **Bottom Section (The Analysis):** A text block titled `[COMMANDER_LOG]` that displays the `description` and the `why_match` text in the 'VT323' font.
+- **The Commit Action:** A large, inverted-color button at the bottom of the modal: `[ LOCK_SIGNAL_TO_CORE ]`.
+
+**4. The Transition Logic:**
+- When `[ LOCK_SIGNAL_TO_CORE ]` is clicked:
+    1. Close the modal.
+    2. Snap-close Drawer 001.
+    3. Snap-open Drawer 002.
+    4. Pass the selected signal's data to Drawer 002 so it can prep the synthesis (e.g., pre-filling the 'Decrypted Script' area with a phonetic sample).
+
+**Please ensure the modal feels like a heavy physical terminal snapping onto the screen over the existing UI.**"
