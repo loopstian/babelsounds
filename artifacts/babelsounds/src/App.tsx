@@ -13,6 +13,7 @@ interface LanguageSignal {
   why_match: string;
   phonetic_sample: string;
   fingerprint: string[];
+  voiceDescription: string;
 }
 
 interface AudioClip {
@@ -68,6 +69,7 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     dna: { guttural: 88, sibilant: 42, vocalic: 61 },
     why_match:
       "High consonant density aligns with this type of query. The subterranean acoustic environment of Xibalba favors deep, resonant tones over softer fricatives.",
+    voiceDescription: "An ancient, raspy female priestess speaking with deep sorrow and slow pacing, echoing through dark stone corridors.",
     phonetic_sample: "XŌCH-\nYĀŌ-\nYŌTL",
     fingerprint: [
       "  /\\  /\\  /\\  /\\  ",
@@ -90,6 +92,7 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     dna: { guttural: 34, sibilant: 91, vocalic: 78 },
     why_match:
       "Sustained fricative chains dominate this language's phoneme structure. The sacred silence intervals suggest a rhythm-based synthesis approach, well-suited for ceremonial pacing.",
+    voiceDescription: "A commanding male priest with booming resonance and sharp sibilant whispers, as if channeling the voice of Anubis himself.",
     phonetic_sample: "ĒN-\nLIL-\nKI",
     fingerprint: [
       "===================",
@@ -112,6 +115,7 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     dna: { guttural: 67, sibilant: 28, vocalic: 95 },
     why_match:
       "Extreme vowel richness — the highest harmonic overtone index in the archive. The nasal resonance pattern is unique to Siberian permafrost acoustics, suggesting a two-voice synthesis layer.",
+    voiceDescription: "A weathered old shaman humming through nasal drones, voice cracking with age, deeply meditative and hypnotic.",
     phonetic_sample: "HA-\nAB-\nCUL",
     fingerprint: [
       "~~~~~~~~~~~~~~~~~~ ",
@@ -134,6 +138,7 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     dna: { guttural: 55, sibilant: 63, vocalic: 47 },
     why_match:
       "A balanced phoneme profile across all dimensions. The antiphonal structure suits layered track architecture, and its linguistic isolation means a uniquely pure sound with no outside influence.",
+    voiceDescription: "A terrifying, high-pitched screeching ancient warrior chanting battle cries with rhythmic fury and controlled rage.",
     phonetic_sample: "TĒZ-\nCAT-\nLIP",
     fingerprint: [
       "+-----------------+",
@@ -364,24 +369,31 @@ function RecordingScreen({
   onBack: () => void;
   onProceed: () => void;
 }) {
-  const [inputText, setInputText] = useState("");
+  const [voicePrompt, setVoicePrompt] = useState(language.voiceDescription);
+  const [scriptPrompt, setScriptPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
   function handleGenerate() {
-    if (!inputText.trim() || generating) return;
+    if (!scriptPrompt.trim() || generating) return;
     setGenerating(true);
     setTimeout(() => {
+      // TODO: ElevenLabs API Integration
+      // client.textToVoice.design({
+      //   text: scriptPrompt,
+      //   voiceDescription: voicePrompt,
+      //   outputFormat: "mp3_22050_32"
+      // });
       const fragment = PHONEME_FRAGMENTS[Math.floor(Math.random() * PHONEME_FRAGMENTS.length)];
       const duration = Math.floor(Math.random() * 6) + 3;
-      const words = inputText.trim().split(" ").slice(0, 4).join(" ");
+      const words = scriptPrompt.trim().split(" ").slice(0, 4).join(" ");
       onAddClip({
         id: `clip_${Date.now()}`,
         name: words.length > 0 ? `${words} (${fragment})` : `${language.title} — Phrase ${clipLibrary.length + 1}`,
         duration,
       });
       setGenerating(false);
-      setInputText("");
+      setScriptPrompt("");
     }, 1200);
   }
 
@@ -410,22 +422,36 @@ function RecordingScreen({
         <div style={{ borderRight: "4px solid #F0EAD6", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
             <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "6px" }}>The Vocal Lab</div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Record phrases in {language.title}</div>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Design a voice and script phrases in {language.title}</div>
           </div>
 
           <div style={{ borderTop: "2px solid #F0EAD630" }} />
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
             <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Voice Description
+            </label>
+            <textarea
+              rows={4}
+              placeholder="Describe the speaker (e.g., A raspy old man, a booming giant...)"
+              value={voicePrompt}
+              onChange={(e) => setVoicePrompt(e.target.value)}
+              style={{ width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
+            />
+
+            <div style={{ borderTop: "2px solid #F0EAD620", margin: "4px 0" }} />
+
+            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase" }}>
               What should the AI say?
             </label>
             <textarea
-              rows={8}
-              placeholder={`Type a phrase to vocalize in ${language.title}...`}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.2rem", resize: "none" }}
+              rows={4}
+              placeholder="Type a phrase to vocalize..."
+              value={scriptPrompt}
+              onChange={(e) => setScriptPrompt(e.target.value)}
+              style={{ width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
             />
+
             <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>
               Tone: {language.dna.guttural > 60 ? "Harsh" : "Smooth"} &nbsp;·&nbsp;
               Pace: {language.dna.sibilant > 60 ? "Fast" : "Slow"} &nbsp;·&nbsp;
@@ -435,8 +461,8 @@ function RecordingScreen({
 
           <button
             onClick={handleGenerate}
-            disabled={generating || !inputText.trim()}
-            style={{ ...solidBtn, fontSize: "1.3rem", padding: "16px", width: "100%", opacity: generating || !inputText.trim() ? 0.5 : 1 }}
+            disabled={generating || !scriptPrompt.trim()}
+            style={{ ...solidBtn, fontSize: "1.3rem", padding: "16px", width: "100%", opacity: generating || !scriptPrompt.trim() ? 0.5 : 1 }}
           >
             {generating ? "Generating..." : "Generate Audio"}
           </button>

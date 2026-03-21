@@ -1,0 +1,32 @@
+Refactor **Screen 2 (The Recording / Vocal Lab)** to integrate ElevenLabs Voice Design capabilities using natural language prompting.
+
+**1. Update the Global State Data Structure:**
+- Update the mock data for `selectedLanguage` (from the Archives screen) to include a new property called `voiceDescription`. 
+- Give the mock languages descriptive values for this, e.g., 'An ancient, raspy female priestess speaking with deep sorrow and slow pacing.' or 'A terrifying, high-pitched, screeching ancient warrior.'
+
+**2. Update the Vocal Lab UI (Left Column):**
+- The left column should now contain TWO stacked text areas instead of one.
+- **Top Text Area (The Actor):**
+    - Label: 'Voice Description'
+    - Placeholder: 'Describe the speaker (e.g., A raspy old man, a booming giant...)'
+    - **Logic:** This text area should be pre-filled with the `selectedLanguage.voiceDescription` from global state, but the user must be able to edit it. Bind it to a local state called `voicePrompt`.
+- **Bottom Text Area (The Script):**
+    - Label: 'What should the AI say?'
+    - Placeholder: 'Type a phrase to vocalize...'
+    - Bind this to a local state called `scriptPrompt`.
+- **Visuals:** Both text areas must maintain the retro-brutalist style (`bg-transparent`, `border-2 border-[#F0EAD6]`, `rounded-none`, `text-[#F0EAD6]`, `p-4`). Give them equal spacing.
+
+**3. Update the Generate Action:**
+- When the 'Generate Audio' button is clicked, update the mock generation function to explicitly show it is passing BOTH prompts. 
+- Add a code comment block inside the generate function to show where the ElevenLabs SDK will go:
+  ```javascript
+  // TODO: ElevenLabs API Integration
+  // client.textToVoice.design({
+  //   text: scriptPrompt,
+  //   voiceDescription: voicePrompt,
+  //   outputFormat: "mp3_22050_32"
+  // });
+  ```
+- Keep the existing logic that adds the generated mock clip to the `clipLibrary` state so it appears on the right side of the screen.
+
+**Please ensure the layout remains clean and strictly adheres to the #121212 and #F0EAD6 color palette, avoiding any rounded corners.**
