@@ -517,37 +517,43 @@ function SoundscapeScreen({
   const [atmosphereText, setAtmosphereText] = useState("");
   const [generatingAtmosphere, setGeneratingAtmosphere] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showClipPicker, setShowClipPicker] = useState(false);
+  const [atmosphereClips, setAtmosphereClips] = useState<AudioClip[]>([]);
 
   const trackWidth = TIMELINE_DURATION * PX_PER_SEC;
+  const allSidebarClips = [...clipLibrary, ...atmosphereClips];
 
-  function nextVoiceStart() {
-    if (voiceTrack.length === 0) return 0;
-    const last = voiceTrack[voiceTrack.length - 1];
-    return last.startTime + last.duration;
-  }
-
-  function addClipToVoice(clip: AudioClip) {
-    const start = nextVoiceStart();
-    if (start >= TIMELINE_DURATION) return;
-    setVoiceTrack((prev) => [
-      ...prev,
-      { id: `tc_${Date.now()}`, name: clip.name, startTime: start, duration: Math.min(clip.duration, TIMELINE_DURATION - start) },
-    ]);
-    setShowClipPicker(false);
-  }
-
-  function removeVoiceClip(id: string) {
-    setVoiceTrack((prev) => prev.filter((c) => c.id !== id));
+  function handleDrop(trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const clipData = e.dataTransfer.getData("application/clip");
+    if (!clipData) return;
+    try {
+      const parsed = JSON.parse(clipData);
+      const name = typeof parsed.name === "string" ? parsed.name : "";
+      const duration = typeof parsed.duration === "number" && parsed.duration > 0 ? parsed.duration : 0;
+      if (!name || !duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
+      const startTime = Math.max(0, Math.min(Math.floor(x / PX_PER_SEC), TIMELINE_DURATION - 1));
+      const clampedDuration = Math.min(duration, TIMELINE_DURATION - startTime);
+      if (clampedDuration <= 0) return;
+      trackSetter((prev) => [
+        ...prev,
+        { id: `tc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name, startTime, duration: clampedDuration },
+      ]);
+    } catch {
+      return;
+    }
   }
 
   function handleGenerateAtmosphere() {
     if (!atmosphereText.trim() || generatingAtmosphere) return;
     setGeneratingAtmosphere(true);
     setTimeout(() => {
-      const duration = TIMELINE_DURATION;
-      setAtmosphereTrack([{ id: `atm_${Date.now()}`, name: atmosphereText.trim(), startTime: 0, duration }]);
+      const dur = Math.floor(Math.random() * 8) + 8;
+      const clip: AudioClip = { id: `atm_${Date.now()}`, name: atmosphereText.trim(), duration: dur };
+      setAtmosphereClips((prev) => [...prev, clip]);
       setGeneratingAtmosphere(false);
+      setAtmosphereText("");
     }, 1400);
   }
 
@@ -568,7 +574,7 @@ function SoundscapeScreen({
           <span style={{ color: "#F0EAD625" }}>|</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 0 0 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "0 0 0 16px" }}>
           <button onClick={handlePlayAll} style={{ ...solidBtn, fontSize: "1.1rem", padding: "0 20px", height: "100%", border: "none", borderLeft: "2px solid #F0EAD6" }}>
             {isPlaying ? "▶ Playing..." : "▶ Play All"}
           </button>
@@ -578,149 +584,186 @@ function SoundscapeScreen({
         </div>
       </div>
 
-      {/* Timeline section */}
-      <div style={{ padding: "24px", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1rem", letterSpacing: "0.08em", marginBottom: "16px" }}>
-          THE TIMELINE
-        </div>
+      {/* Main content: sidebar + timeline */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        <div style={{ border: "2px solid #F0EAD6", overflow: "hidden" }}>
-          {/* Time ruler */}
-          <div style={{ display: "flex", borderBottom: "2px solid #F0EAD6", background: "#0d0d0d" }}>
-            <div style={{ minWidth: "120px", borderRight: "2px solid #F0EAD6", padding: "6px 12px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase" }}>
-              Track
-            </div>
-            <div style={{ overflowX: "auto", flex: 1 }}>
-              <div style={{ width: `${trackWidth}px`, position: "relative", height: "28px" }}>
-                {TIME_MARKERS.map((t) => (
-                  <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
-                    <div style={{ width: "1px", background: "#F0EAD630", height: "100%", position: "absolute" }} />
-                    <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", paddingLeft: "4px", whiteSpace: "nowrap" }}>{t}s</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* ── Clip Library Sidebar ── */}
+        <div style={{ width: "256px", flexShrink: 0, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", background: "#0d0d0d" }}>
+          <div style={{ padding: "14px 16px", borderBottom: "2px solid #F0EAD6", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Clip Library
           </div>
-
-          {/* Track 1: Voices */}
-          <TrackRow
-            label="Voices"
-            trackWidth={trackWidth}
-            clips={voiceTrack}
-            onRemoveClip={removeVoiceClip}
-            isPlaying={isPlaying}
-            action={
-              <button onClick={() => setShowClipPicker((p) => !p)} style={{ ...solidBtn, fontSize: "1rem", padding: "4px 12px" }}>
-                + Add Clip
-              </button>
-            }
-          />
-
-          {/* Track 2: Atmosphere */}
-          <TrackRow
-            label="Atmosphere"
-            trackWidth={trackWidth}
-            clips={atmosphereTrack}
-            onRemoveClip={(id) => setAtmosphereTrack((p) => p.filter((c) => c.id !== id))}
-            isPlaying={isPlaying}
-          />
-        </div>
-
-        {/* Clip picker */}
-        {showClipPicker && (
-          <div style={{ border: "2px solid #F0EAD6", borderTop: "none", background: "#0d0d0d" }}>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid #F0EAD630", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Choose a clip to add to the Voices track
-            </div>
-            {clipLibrary.length === 0 && (
-              <div style={{ padding: "16px", fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>
-                No clips in your library. Go back to the Vocal Lab to record some.
+          <div style={{ padding: "10px 16px 6px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", letterSpacing: "0.06em" }}>
+            Drag clips onto a track
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+            {allSidebarClips.length === 0 && (
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "16px 8px", textAlign: "center", border: "2px dashed #F0EAD625" }}>
+                No clips yet.
               </div>
             )}
-            {clipLibrary.map((clip) => (
-              <div key={clip.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px", borderBottom: "1px solid #F0EAD615" }}>
-                <span style={{ flex: 1, fontFamily: "'VT323', monospace", fontSize: "1.15rem" }}>{clip.name}</span>
-                <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>{clip.duration}s</span>
-                <button onClick={() => addClipToVoice(clip)} style={{ ...solidBtn, fontSize: "1rem", padding: "4px 14px" }}>Add</button>
+            {allSidebarClips.map((clip) => (
+              <div
+                key={clip.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration }));
+                  e.dataTransfer.effectAllowed = "copy";
+                }}
+                style={{
+                  border: "2px solid #F0EAD6",
+                  background: "#121212",
+                  padding: "10px 12px",
+                  marginBottom: "6px",
+                  cursor: "grab",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  userSelect: "none",
+                }}
+              >
+                <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", flexShrink: 0, color: "#a09880" }}>▶</span>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
+                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s</div>
+                </div>
               </div>
             ))}
-            <div style={{ padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={() => setShowClipPicker(false)} style={{ ...outlineBtn, fontSize: "1rem", padding: "4px 14px" }}>Cancel</button>
-            </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Atmosphere generator */}
-      <div style={{ padding: "0 24px 24px" }}>
-        <div style={{ border: "2px solid #F0EAD6" }}>
-          <div style={{ borderBottom: "2px solid #F0EAD6", padding: "10px 16px", background: "#F0EAD608", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Atmosphere Generator
-          </div>
-          <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", display: "block", marginBottom: "6px", letterSpacing: "0.06em" }}>
-                Describe the background atmosphere
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. haunting desert wind, deep metallic drones, cave drip resonance..."
-                value={atmosphereText}
-                onChange={(e) => setAtmosphereText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleGenerateAtmosphere(); }}
-                style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "10px 14px" }}
+        {/* ── Timeline + Atmosphere area ── */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
+          {/* Timeline */}
+          <div style={{ padding: "24px", flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1rem", letterSpacing: "0.08em", marginBottom: "16px" }}>
+              THE TIMELINE
+            </div>
+
+            <div style={{ border: "2px solid #F0EAD6", overflow: "hidden" }}>
+              {/* Time ruler */}
+              <div style={{ display: "flex", borderBottom: "2px solid #F0EAD6", background: "#0d0d0d" }}>
+                <div style={{ minWidth: "100px", borderRight: "2px solid #F0EAD6", padding: "6px 12px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase" }}>
+                  Track
+                </div>
+                <div style={{ overflowX: "auto", flex: 1 }}>
+                  <div style={{ width: `${trackWidth}px`, position: "relative", height: "28px" }}>
+                    {TIME_MARKERS.map((t) => (
+                      <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
+                        <div style={{ width: "1px", background: "#F0EAD630", height: "100%", position: "absolute" }} />
+                        <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", paddingLeft: "4px", whiteSpace: "nowrap" }}>{t}s</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Track 1: Voices */}
+              <TrackRow
+                label="Voices"
+                trackWidth={trackWidth}
+                clips={voiceTrack}
+                onRemoveClip={(id) => setVoiceTrack((p) => p.filter((c) => c.id !== id))}
+                onDrop={(e) => handleDrop(setVoiceTrack, e)}
+                isPlaying={isPlaying}
+              />
+
+              {/* Track 2: Atmosphere */}
+              <TrackRow
+                label="Atmosphere"
+                trackWidth={trackWidth}
+                clips={atmosphereTrack}
+                onRemoveClip={(id) => setAtmosphereTrack((p) => p.filter((c) => c.id !== id))}
+                onDrop={(e) => handleDrop(setAtmosphereTrack, e)}
+                isPlaying={isPlaying}
               />
             </div>
-            <button
-              onClick={handleGenerateAtmosphere}
-              disabled={generatingAtmosphere || !atmosphereText.trim()}
-              style={{ ...solidBtn, fontSize: "1.2rem", padding: "12px 24px", marginTop: "24px", opacity: generatingAtmosphere || !atmosphereText.trim() ? 0.5 : 1 }}
-            >
-              {generatingAtmosphere ? "Generating..." : "Generate Atmosphere"}
-            </button>
           </div>
-          {generatingAtmosphere && (
-            <div style={{ borderTop: "1px solid #F0EAD625", padding: "8px 16px", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>
-              Synthesizing atmosphere via ElevenLabs Music API...
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div style={{ borderTop: "2px solid #F0EAD615", padding: "12px 24px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", display: "flex", justifyContent: "space-between", marginTop: "auto" }}>
-        <span>Babelsounds — Dead Language Audio Synthesis</span>
-        <span>v1.0.0</span>
+          {/* Atmosphere generator */}
+          <div style={{ padding: "0 24px 24px" }}>
+            <div style={{ border: "2px solid #F0EAD6" }}>
+              <div style={{ borderBottom: "2px solid #F0EAD6", padding: "10px 16px", background: "#F0EAD608", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Atmosphere Generator
+              </div>
+              <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", display: "block", marginBottom: "6px", letterSpacing: "0.06em" }}>
+                    Describe the background atmosphere
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. haunting desert wind, deep metallic drones, cave drip resonance..."
+                    value={atmosphereText}
+                    onChange={(e) => setAtmosphereText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleGenerateAtmosphere(); }}
+                    style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "10px 14px" }}
+                  />
+                </div>
+                <button
+                  onClick={handleGenerateAtmosphere}
+                  disabled={generatingAtmosphere || !atmosphereText.trim()}
+                  style={{ ...solidBtn, fontSize: "1.2rem", padding: "12px 24px", marginTop: "24px", opacity: generatingAtmosphere || !atmosphereText.trim() ? 0.5 : 1 }}
+                >
+                  {generatingAtmosphere ? "Generating..." : "Generate Atmosphere"}
+                </button>
+              </div>
+              {generatingAtmosphere && (
+                <div style={{ borderTop: "1px solid #F0EAD625", padding: "8px 16px", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>
+                  Synthesizing atmosphere via ElevenLabs Music API...
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ borderTop: "2px solid #F0EAD615", padding: "12px 24px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", display: "flex", justifyContent: "space-between", marginTop: "auto" }}>
+            <span>Babelsounds — Dead Language Audio Synthesis</span>
+            <span>v1.0.0</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// TrackRow sub-component
+// TrackRow sub-component with drag-and-drop
 function TrackRow({
   label,
   trackWidth,
   clips,
   onRemoveClip,
+  onDrop,
   isPlaying,
-  action,
 }: {
   label: string;
   trackWidth: number;
   clips: TrackClip[];
   onRemoveClip: (id: string) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   isPlaying: boolean;
-  action?: React.ReactNode;
 }) {
+  const [dragOver, setDragOver] = useState(false);
+
   return (
     <div style={{ display: "flex", borderTop: "2px solid #F0EAD6", minHeight: "72px" }}>
       {/* Label column */}
-      <div style={{ minWidth: "120px", borderRight: "2px solid #F0EAD6", padding: "10px 12px", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#0d0d0d", flexShrink: 0 }}>
+      <div style={{ minWidth: "100px", borderRight: "2px solid #F0EAD6", padding: "10px 12px", display: "flex", alignItems: "center", background: "#0d0d0d", flexShrink: 0 }}>
         <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
-        {action && <div>{action}</div>}
       </div>
-      {/* Track area */}
-      <div style={{ flex: 1, overflowX: "auto", background: "#0a0a0a", position: "relative", minHeight: "72px" }}>
+      {/* Track area (drop target) */}
+      <div
+        style={{
+          flex: 1,
+          overflowX: "auto",
+          background: dragOver ? "rgba(240, 234, 214, 0.08)" : "#0a0a0a",
+          position: "relative",
+          minHeight: "72px",
+          transition: "background 0.15s",
+        }}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { setDragOver(false); onDrop(e); }}
+      >
         <div style={{ width: `${trackWidth}px`, height: "100%", position: "relative" }}>
           {/* Grid lines */}
           {TIME_MARKERS.map((t) => (
@@ -736,7 +779,7 @@ function TrackRow({
                 top: "8px",
                 bottom: "8px",
                 width: `${clip.duration * PX_PER_SEC - 2}px`,
-                background: isPlaying ? "#F0EAD6" : "#F0EAD6",
+                background: "#F0EAD6",
                 border: "2px solid #121212",
                 display: "flex",
                 alignItems: "center",

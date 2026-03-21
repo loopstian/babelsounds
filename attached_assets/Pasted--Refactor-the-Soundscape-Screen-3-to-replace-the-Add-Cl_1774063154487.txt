@@ -1,0 +1,34 @@
+"Refactor the **Soundscape (Screen 3)** to replace the 'Add Clip' button with a draggable sidebar system.
+
+**1. The Audio Library Sidebar:**
+- Create a vertical sidebar on the left side of the Timeline component.
+- **Styling:** `w-64`, `border-r-2 border-[#F0EAD6]`, `h-full`.
+- **Label:** At the top of the sidebar, add a header: 'CLIP LIBRARY'.
+- **Content:** List all audio clips from the `clipLibrary` (generated in the Recording screen).
+- **Clip Items:** 
+    - Represent each clip as a small, draggable rectangle.
+    - Include the clip name and a tiny play icon.
+    - Set the attribute `draggable="true"` on these items.
+    - Use the `onDragStart` event to store the clip data (clip ID and duration).
+
+**2. The Timeline Drop Zones:**
+- Make both the 'Voices' track and the 'Atmosphere' track valid drop targets.
+- **Highlighting:** When a clip is dragged over a track, give the track a subtle background highlight (e.g., `bg-[#F0EAD6]/10`) to show it is ready for the drop.
+- **Drop Logic:** Use the `onDrop` event to:
+    1. Capture the X-coordinate of the drop relative to the timeline start.
+    2. Convert that X-coordinate into a 'time' value (e.g., if the timeline is 1000px wide for 60 seconds, calculate the seconds based on the drop pixel).
+    3. Add the clip to the track at that specific time.
+
+**3. Timeline Clip Placement:**
+- Once dropped, the clip should appear as a solid cream-colored block on the track.
+- The block's horizontal position (`left`) and width must be calculated based on its start time and duration relative to the timeline ruler.
+- Allow the user to click a placed clip to delete it from the timeline.
+
+**4. Atmosphere Integration:**
+- Ensure that clips generated via the 'Atmosphere Generator' also appear in this sidebar library so they can be dragged onto the Atmosphere track manually.
+
+**5. Visual Refinement:**
+- Keep the brutalist aesthetic: hard borders, #121212 background, and VT323 font.
+- Ensure the sidebar and timeline layout is a single cohesive flex-row: `[Sidebar (left)] [Timeline (right)]`.
+
+**Please implement the native HTML5 Drag and Drop API to make this feel tactile and professional.**"
