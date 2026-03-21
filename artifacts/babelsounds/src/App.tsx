@@ -782,7 +782,11 @@ function TrackRow({
           minHeight: "72px",
           transition: "background 0.15s",
         }}
-        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = e.dataTransfer.types.includes("application/track-move") ? "move" : "copy";
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { setDragOver(false); onDrop(e); }}
       >
