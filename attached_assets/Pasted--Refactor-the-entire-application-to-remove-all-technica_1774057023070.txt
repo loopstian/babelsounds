@@ -1,0 +1,47 @@
+"Refactor the entire application to remove all 'technical,' 'system,' and 'hacker' language and styling. The goal is a clean, professional, and user-friendly interface using simple English.
+
+**1. Clean Up the Visual Style (No 'System' Fluff):**
+- Remove all brackets `[ ]`, double slashes `//`, and underscores `_` from labels and buttons.
+- Remove all 'System ID' numbers (e.g., no more '001', 'SIGNAL_ARC_01').
+- Buttons should be solid rectangles (Cream background, Black text) or simple outlined rectangles. No more ASCII-style brackets around text.
+
+**2. Simplify the Navigation & Labels (Human Language):**
+- **Drawer 1 Title:** '1. Find a Language'
+- **Drawer 2 Title:** '2. Create the Voice'
+- **Drawer 3 Title:** '3. Refine the Sound'
+- **Header Marquee:** Change to a simple, slow-scrolling text: 'Exploring the sounds of lost civilizations and ancient myths.'
+
+**3. Refactor Drawer 1 (Research Phase):**
+- **Input Label:** 'What are you looking for?'
+- **Placeholder:** 'e.g. Ancient Greek, deep desert chants, whispering spirits...'
+- **Search Button:** 'Search'
+- **Results Table:** Use headers: 'Name', 'Match', 'Action'.
+- **Action Button:** 'Details'
+- **Match Score:** Keep the horizontal bar, but label it simply as 'Match'.
+
+**4. Refactor the Information Modal (Pop-up):**
+- **Title:** 'Language Information'
+- **Visual Section:** Label it 'Sound Character'.
+- **Attributes Section:** Use simple scales instead of percentages:
+    - **Tone:** Harsh to Smooth
+    - **Pace:** Fast to Slow
+    - **Depth:** Deep to High
+- **Text Section:** Label it 'Summary'.
+- **Action Button:** 'Use this language'
+
+**5. Refactor Drawer 2 (Voice Creation):**
+- **Input Label:** 'What should the AI say?'
+- **Output Label:** 'Pronunciation Guide' (This explains that the text is how the AI will vocalize it).
+- **Generate Button:** 'Generate Audio'
+
+**6. Refactor Drawer 3 (Design & Timeline):**
+- **Slider Labels:** 
+    - 'Pitch' (Low — High)
+    - 'Echo' (Dry — Wet)
+    - 'Layers' (Single — Full)
+- **Timeline:** Show the Language Name, a 'Play' button, a 'Mute' button, and a 'Delete' button.
+
+**7. Functional Update:**
+- When 'Use this language' is clicked in the modal, ensure it closes the modal, closes '1. Find a Language', and opens '2. Create the Voice' automatically.
+
+**Please keep the charcoal (#121212) and cream (#F0EAD6) color palette and the hard-bordered brutalist layout, but make the text feel like a high-end, minimalist creative tool.**"

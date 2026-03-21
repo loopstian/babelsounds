@@ -21,18 +21,46 @@ interface LanguageSignal {
   fingerprint: string[];
 }
 
-// ─── Signal Data ─────────────────────────────────────────────────────────────
+// ─── Button helpers ───────────────────────────────────────────────────────────
+
+const solidBtn: React.CSSProperties = {
+  background: "#F0EAD6",
+  color: "#121212",
+  border: "2px solid #F0EAD6",
+  fontFamily: "'VT323', monospace",
+  fontSize: "1.2rem",
+  letterSpacing: "0.06em",
+  cursor: "pointer",
+  padding: "8px 18px",
+  textTransform: "uppercase" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+const outlineBtn: React.CSSProperties = {
+  background: "#121212",
+  color: "#F0EAD6",
+  border: "2px solid #F0EAD6",
+  fontFamily: "'VT323', monospace",
+  fontSize: "1.2rem",
+  letterSpacing: "0.06em",
+  cursor: "pointer",
+  padding: "8px 18px",
+  textTransform: "uppercase" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+// ─── Language Data ────────────────────────────────────────────────────────────
 
 const LANGUAGE_SIGNALS: LanguageSignal[] = [
   {
-    id: "SIGNAL_ARC_01",
+    id: "arc_01",
     title: "Camazotz Ritual Phonetics",
     strength: 94,
     description:
-      "Firecrawl uplink surfaced deep-archive fragments from the Popol Vuh and Dresden Codex cross-referenced against acoustic reconstructions of Classic Maya ceremonial sites at Palenque. The Camazotz death-bat deity presided over Xibalba's blood-sacrifice chambers — phoneme clusters were vocalized in complete darkness, demanding extreme guttural resonance to carry through stone corridors.",
+      "Sourced from the Popol Vuh and Dresden Codex, cross-referenced against acoustic reconstructions of Classic Maya ceremonial sites at Palenque. The Camazotz death-bat deity presided over Xibalba's blood-sacrifice chambers — phoneme clusters were vocalized in complete darkness, demanding extreme resonance to carry through stone corridors.",
     dna: { guttural: 88, sibilant: 42, vocalic: 61 },
     why_match:
-      "CLINICAL ANALYSIS: High consonant density (plosive-cluster index 0.91) aligns with subject query. Xibalba subterranean acoustic environment penalizes sibilant diffusion. Guttural index CRITICAL.",
+      "High consonant density aligns with this type of query. The subterranean acoustic environment of Xibalba favors deep, resonant tones over softer fricatives.",
     phonetic_sample: "XŌCH-\nYĀŌ-\nYŌTL",
     fingerprint: [
       "  /\\  /\\  /\\  /\\  ",
@@ -47,14 +75,14 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     ],
   },
   {
-    id: "SIGNAL_ARC_02",
+    id: "arc_02",
     title: "Ennead Death Invocation",
     strength: 81,
     description:
-      "Archive nodes recovered from transliterated papyrus scrolls (Spell 125, Book of the Dead) alongside acoustic modeling of the Hypostyle Hall at Karnak. The Ennead — nine primordial Egyptian deities — were invoked through sustained sibilant tones that induced resonance in the limestone chambers. Vowels were considered divine emanations, forbidden in written script but recorded in oral tradition.",
+      "Recovered from papyrus scrolls (Spell 125, Book of the Dead) alongside acoustic modeling of the Hypostyle Hall at Karnak. The nine primordial Egyptian deities were invoked through sustained sibilant tones that induced resonance in the limestone chambers. Vowels were considered divine emanations, forbidden in written script but preserved in oral tradition.",
     dna: { guttural: 34, sibilant: 91, vocalic: 78 },
     why_match:
-      "CLINICAL ANALYSIS: Sustained fricative chains (s, sh, z) dominate corpus. Vowel-harmonic structure indexes at 0.78 — unusually high for Afroasiatic branch. Sacred silence intervals suggest rhythm-based synthesis approach.",
+      "Sustained fricative chains dominate this language's phoneme structure. The sacred silence intervals suggest a rhythm-based synthesis approach, well-suited for ceremonial pacing.",
     phonetic_sample: "ĒN-\nLIL-\nKI",
     fingerprint: [
       "===================",
@@ -62,21 +90,21 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
       "||_______________||",
       "|| |   | |   | | ||",
       "|| |___|_|___|_| ||",
-      "||  ANUBIS_SCALE ||",
+      "||  ANUBIS SCALE ||",
       "||_______________||",
       "=|||=====|||=====||",
-      " [MA'AT]  [THOTH] ",
+      "  MA'AT    THOTH  ",
     ],
   },
   {
-    id: "SIGNAL_ARC_03",
+    id: "arc_03",
     title: "Proto-Uralic Shamanic Drone",
     strength: 73,
     description:
-      "Acoustic archaeology reconstructions from Neolithic shaman burial sites in Western Siberia, cross-referenced with surviving Khanty and Selkup ceremonial recordings. The proto-language predates written record by 6,000 years. Phoneme reconstruction derived from comparative linguistics of all modern Uralic branches. Characterized by sustained nasal drones and deep vowel harmonics — throat-singing precursors.",
+      "Reconstructed from Neolithic shaman burial sites in Western Siberia, cross-referenced with surviving Khanty and Selkup ceremonial recordings. This proto-language predates written record by 6,000 years. Characterized by sustained nasal drones and deep vowel harmonics — the earliest known precursors to throat-singing.",
     dna: { guttural: 67, sibilant: 28, vocalic: 95 },
     why_match:
-      "CLINICAL ANALYSIS: Extreme vocalic saturation (harmonic overtone index 0.95) — highest in archive corpus. Nasal resonance pattern unique to Siberian permafrost acoustics. Guttural-vocalic compound phonemes suggest two-voice synthesis layer.",
+      "Extreme vowel richness — the highest harmonic overtone index in the archive. The nasal resonance pattern is unique to Siberian permafrost acoustics, suggesting a two-voice synthesis layer.",
     phonetic_sample: "HA-\nAB-\nCUL",
     fingerprint: [
       "~~~~~~~~~~~~~~~~~~ ",
@@ -91,14 +119,14 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     ],
   },
   {
-    id: "SIGNAL_ARC_04",
+    id: "arc_04",
     title: "Elamite Lamentation Cycle",
     strength: 58,
     description:
-      "Recovered from cuneiform tablets at Susa and Anshan, cross-referenced with Mesopotamian lament-priest oral tradition logs. Elamite remains one of the world's true language isolates — no confirmed genealogical relatives. Its lamentation genre featured antiphonal structure: a solo high priest vocalized the 'cry' motif, answered by a chorus of temple singers using sustained low-register drones. A sound that has not been heard for 2,500 years.",
+      "Recovered from cuneiform tablets at Susa and Anshan. Elamite is one of the world's true language isolates — no confirmed relatives. Its lamentation genre featured antiphonal structure: a solo high priest vocalized the 'cry' motif, answered by temple singers using sustained low-register drones. A sound unheard for 2,500 years.",
     dna: { guttural: 55, sibilant: 63, vocalic: 47 },
     why_match:
-      "CLINICAL ANALYSIS: Balanced phoneme profile — moderate scores across all dimensions. Antiphonal structure suggests layered track architecture. Isolated linguistic status means zero contamination from neighboring phoneme families. High synthesis purity index: 0.87.",
+      "A balanced phoneme profile across all dimensions. The antiphonal structure suits layered track architecture, and its linguistic isolation means a uniquely pure sound with no outside influence.",
     phonetic_sample: "TĒZ-\nCAT-\nLIP",
     fingerprint: [
       "+-----------------+",
@@ -108,7 +136,7 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
       "| ||| ||| ||| ||| |",
       "| --- --- --- --- |",
       "| ELAMITE ISOLATE |",
-      "| [NO_RELATIVES]  |",
+      "|  NO  RELATIVES  |",
       "+-----------------+",
     ],
   },
@@ -118,72 +146,98 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
 
 function RackDrawer({ number, title, isOpen, onToggle, children }: DrawerProps) {
   return (
-    <div style={{ border: "2px solid #F0EAD6", marginBottom: "0", borderTop: "none" }}>
+    <div style={{ border: "2px solid #F0EAD6", borderTop: "none" }}>
       <button
         onClick={onToggle}
         style={{
           width: "100%",
           display: "flex",
           alignItems: "center",
-          gap: "12px",
-          padding: "10px 16px",
+          gap: "16px",
+          padding: "12px 20px",
           background: isOpen ? "#F0EAD6" : "#121212",
           color: isOpen ? "#121212" : "#F0EAD6",
           border: "none",
           borderBottom: isOpen ? "2px solid #F0EAD6" : "none",
           cursor: "pointer",
-          fontFamily: "'VT323', monospace",
-          fontSize: "1.4rem",
-          letterSpacing: "0.15em",
+          fontFamily: "'Rubik Mono One', monospace",
+          fontSize: "1rem",
+          letterSpacing: "0.08em",
           textTransform: "uppercase",
           textAlign: "left",
         }}
       >
-        <span style={{ minWidth: "32px", fontWeight: "bold" }}>{isOpen ? "[-]" : "[+]"}</span>
-        <span style={{ opacity: 0.6 }}>{number} //</span>
+        <span
+          style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: "1.4rem",
+            minWidth: "24px",
+            opacity: 0.5,
+          }}
+        >
+          {number}.
+        </span>
         <span>{title}</span>
-        <span style={{ marginLeft: "auto", opacity: 0.5, fontSize: "1rem" }}>
-          {isOpen ? "▲ CLOSE" : "▼ EXPAND"}
+        <span style={{ marginLeft: "auto", fontFamily: "'VT323', monospace", fontSize: "1.1rem", opacity: 0.5 }}>
+          {isOpen ? "▲" : "▼"}
         </span>
       </button>
-      {isOpen && <div style={{ padding: "16px" }}>{children}</div>}
+      {isOpen && <div style={{ padding: "20px" }}>{children}</div>}
     </div>
   );
 }
 
-// ─── Signal Inspect Modal ─────────────────────────────────────────────────────
+// ─── Language Detail Modal ────────────────────────────────────────────────────
 
 function SignalModal({
   signal,
   onClose,
-  onLock,
+  onUse,
 }: {
   signal: LanguageSignal;
   onClose: () => void;
-  onLock: (signal: LanguageSignal) => void;
+  onUse: (signal: LanguageSignal) => void;
 }) {
-  function DnaBar({ label, value }: { label: string; value: number }) {
+  // Tone: guttural high = Harsh, low = Smooth
+  // Pace: sibilant high = Fast, low = Slow
+  // Depth: vocalic high = Deep, low = High-pitched
+
+  function ScaleBar({
+    leftLabel,
+    rightLabel,
+    value,
+  }: {
+    leftLabel: string;
+    rightLabel: string;
+    value: number;
+  }) {
     const filled = Math.round(value / 10);
     const empty = 10 - filled;
     return (
-      <div style={{ marginBottom: "10px" }}>
+      <div style={{ marginBottom: "14px" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             fontFamily: "'VT323', monospace",
-            fontSize: "1.1rem",
-            marginBottom: "3px",
+            fontSize: "1rem",
+            color: "#a09880",
+            marginBottom: "4px",
           }}
         >
-          <span style={{ color: "#a09880", letterSpacing: "0.08em" }}>{label}</span>
-          <span>{value}%</span>
+          <span>{leftLabel}</span>
+          <span>{rightLabel}</span>
         </div>
-        <div style={{ fontFamily: "monospace", fontSize: "1.2rem", letterSpacing: "0.05em" }}>
-          [
-          <span style={{ color: "#F0EAD6" }}>{"■".repeat(filled)}</span>
-          <span style={{ color: "#F0EAD630" }}>{"□".repeat(empty)}</span>
-          ]
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: "1.15rem",
+            color: "#F0EAD6",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {"■".repeat(filled)}
+          <span style={{ color: "#F0EAD625" }}>{"■".repeat(empty)}</span>
         </div>
       </div>
     );
@@ -195,7 +249,7 @@ function SignalModal({
         position: "fixed",
         inset: 0,
         zIndex: 1000,
-        background: "rgba(0,0,0,0.85)",
+        background: "rgba(0,0,0,0.88)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -207,7 +261,7 @@ function SignalModal({
         style={{
           background: "#121212",
           border: "4px solid #F0EAD6",
-          maxWidth: "720px",
+          maxWidth: "700px",
           width: "100%",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -220,18 +274,18 @@ function SignalModal({
           style={{
             background: "#F0EAD6",
             color: "#121212",
-            padding: "10px 16px",
+            padding: "12px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontFamily: "'VT323', monospace",
-            fontSize: "1.3rem",
-            letterSpacing: "0.12em",
+            fontFamily: "'Rubik Mono One', monospace",
+            fontSize: "0.9rem",
+            letterSpacing: "0.06em",
             borderBottom: "4px solid #F0EAD6",
             flexShrink: 0,
           }}
         >
-          <span>DECRYPTION_DOSSIER // {signal.id}</span>
+          <span>Language Information</span>
           <button
             onClick={onClose}
             style={{
@@ -241,152 +295,128 @@ function SignalModal({
               fontFamily: "'VT323', monospace",
               fontSize: "1.2rem",
               cursor: "pointer",
-              padding: "2px 10px",
-              letterSpacing: "0.05em",
+              padding: "2px 12px",
             }}
           >
-            [X] CLOSE_BUFFER
+            Close
           </button>
         </div>
 
-        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Title row */}
+        <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Title + match */}
           <div
             style={{
-              fontFamily: "'Rubik Mono One', monospace",
-              fontSize: "1.4rem",
-              letterSpacing: "0.08em",
-              borderBottom: "2px solid #F0EAD630",
-              paddingBottom: "10px",
+              borderBottom: "2px solid #F0EAD620",
+              paddingBottom: "14px",
+              display: "flex",
+              alignItems: "baseline",
+              gap: "16px",
+              flexWrap: "wrap",
             }}
           >
-            {signal.title}
             <span
               style={{
-                fontFamily: "'VT323', monospace",
-                fontSize: "1.1rem",
-                color: "#a09880",
-                marginLeft: "16px",
-                letterSpacing: "0.1em",
+                fontFamily: "'Rubik Mono One', monospace",
+                fontSize: "1.3rem",
+                letterSpacing: "0.06em",
               }}
             >
-              SIGNAL STRENGTH: {signal.strength}%
+              {signal.title}
+            </span>
+            <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>
+              Match: {signal.strength}%
             </span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
             {/* ASCII Fingerprint */}
-            <div style={{ border: "2px solid #F0EAD6", padding: "12px" }}>
+            <div style={{ border: "2px solid #F0EAD6", padding: "14px" }}>
               <div
                 style={{
                   fontFamily: "'VT323', monospace",
-                  fontSize: "0.9rem",
+                  fontSize: "0.95rem",
                   color: "#a09880",
-                  letterSpacing: "0.1em",
-                  marginBottom: "8px",
+                  letterSpacing: "0.08em",
+                  marginBottom: "10px",
+                  textTransform: "uppercase",
                 }}
               >
-                // VISUAL FINGERPRINT
+                Sound Character
               </div>
               <pre
                 style={{
                   fontFamily: "'VT323', monospace",
-                  fontSize: "1.05rem",
-                  lineHeight: "1.3",
+                  fontSize: "1rem",
+                  lineHeight: "1.35",
                   color: "#F0EAD6",
                   margin: 0,
-                  letterSpacing: "0.05em",
+                  letterSpacing: "0.04em",
                 }}
               >
                 {signal.fingerprint.join("\n")}
               </pre>
             </div>
 
-            {/* Linguistic DNA */}
-            <div style={{ border: "2px solid #F0EAD6", padding: "12px" }}>
+            {/* Scale Attributes */}
+            <div style={{ border: "2px solid #F0EAD6", padding: "14px" }}>
               <div
                 style={{
                   fontFamily: "'VT323', monospace",
-                  fontSize: "0.9rem",
+                  fontSize: "0.95rem",
                   color: "#a09880",
-                  letterSpacing: "0.1em",
-                  marginBottom: "12px",
+                  letterSpacing: "0.08em",
+                  marginBottom: "14px",
+                  textTransform: "uppercase",
                 }}
               >
-                // LINGUISTIC PROFILE — DNA
+                Attributes
               </div>
-              <DnaBar label="GUTTURAL" value={signal.dna.guttural} />
-              <DnaBar label="SIBILANT" value={signal.dna.sibilant} />
-              <DnaBar label="VOCALIC" value={signal.dna.vocalic} />
-              <div
-                style={{
-                  marginTop: "12px",
-                  borderTop: "1px solid #F0EAD630",
-                  paddingTop: "10px",
-                  fontFamily: "'VT323', monospace",
-                  fontSize: "1rem",
-                  color: "#a09880",
-                }}
-              >
-                <div>PHONEME_PURITY: <span style={{ color: "#F0EAD6" }}>0.{signal.strength}</span></div>
-                <div>CORPUS_DEPTH: <span style={{ color: "#F0EAD6" }}>CLASSIFIED</span></div>
-                <div>STATUS: <span style={{ color: "#4CAF50" }}>DECRYPTED</span></div>
-              </div>
+              <ScaleBar leftLabel="Harsh" rightLabel="Smooth" value={100 - signal.dna.guttural} />
+              <ScaleBar leftLabel="Fast" rightLabel="Slow" value={100 - signal.dna.sibilant} />
+              <ScaleBar leftLabel="Deep" rightLabel="High" value={100 - signal.dna.vocalic} />
             </div>
           </div>
 
-          {/* Commander Log */}
+          {/* Summary */}
           <div style={{ border: "2px solid #F0EAD6" }}>
             <div
               style={{
-                background: "#F0EAD610",
+                background: "#F0EAD608",
                 borderBottom: "2px solid #F0EAD6",
-                padding: "6px 12px",
+                padding: "8px 14px",
                 fontFamily: "'VT323', monospace",
-                fontSize: "1rem",
+                fontSize: "0.95rem",
                 color: "#a09880",
-                letterSpacing: "0.12em",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}
             >
-              [COMMANDER_LOG] // FIRECRAWL EXTRACTION REPORT
+              Summary
             </div>
             <div
               style={{
-                padding: "12px",
+                padding: "14px",
                 fontFamily: "'VT323', monospace",
                 fontSize: "1.15rem",
-                lineHeight: "1.5",
+                lineHeight: "1.55",
                 color: "#F0EAD6",
               }}
             >
-              <div style={{ marginBottom: "10px" }}>{signal.description}</div>
-              <div
-                style={{
-                  borderTop: "1px solid #F0EAD640",
-                  paddingTop: "10px",
-                  color: "#a09880",
-                  fontSize: "1.05rem",
-                }}
-              >
-                &gt;&gt; {signal.why_match}
-              </div>
+              <p style={{ margin: "0 0 12px 0" }}>{signal.description}</p>
+              <p style={{ margin: 0, color: "#a09880", fontSize: "1.05rem" }}>{signal.why_match}</p>
             </div>
           </div>
 
-          {/* Lock Button */}
+          {/* Use Button */}
           <button
-            onClick={() => onLock(signal)}
+            onClick={() => onUse(signal)}
             style={{
-              background: "#F0EAD6",
-              color: "#121212",
-              border: "4px solid #F0EAD6",
-              fontFamily: "'Rubik Mono One', monospace",
-              fontSize: "1.3rem",
-              letterSpacing: "0.1em",
-              cursor: "pointer",
+              ...solidBtn,
+              fontSize: "1.25rem",
               padding: "14px",
-              textTransform: "uppercase",
               width: "100%",
+              letterSpacing: "0.1em",
+              border: "4px solid #F0EAD6",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = "#121212";
@@ -397,7 +427,7 @@ function SignalModal({
               (e.currentTarget as HTMLButtonElement).style.color = "#121212";
             }}
           >
-            [ LOCK_SIGNAL_TO_CORE ]
+            Use this language
           </button>
         </div>
       </div>
@@ -405,24 +435,20 @@ function SignalModal({
   );
 }
 
-// ─── Drawer 001: Archive Scanner ─────────────────────────────────────────────
+// ─── Drawer 1: Find a Language ────────────────────────────────────────────────
 
-function ArchiveScanner({
-  onLockSignal,
-}: {
-  onLockSignal: (signal: LanguageSignal) => void;
-}) {
+function FindLanguage({ onSelectSignal }: { onSelectSignal: (signal: LanguageSignal) => void }) {
   const [query, setQuery] = useState("");
-  const [scanning, setScanning] = useState(false);
-  const [scanDone, setScanDone] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const [searchDone, setSearchDone] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
   const [inspecting, setInspecting] = useState<LanguageSignal | null>(null);
 
-  function handleScan() {
-    if (!query.trim() || scanning) return;
-    setScanning(true);
-    setScanDone(false);
-    setScanProgress(0);
+  function handleSearch() {
+    if (!query.trim() || searching) return;
+    setSearching(true);
+    setSearchDone(false);
+    setSearchProgress(0);
 
     let p = 0;
     const interval = setInterval(() => {
@@ -430,22 +456,23 @@ function ArchiveScanner({
       if (p >= 100) {
         p = 100;
         clearInterval(interval);
-        setScanning(false);
-        setScanDone(true);
+        setSearching(false);
+        setSearchDone(true);
       }
-      setScanProgress(p);
+      setSearchProgress(p);
     }, 80);
   }
 
-  function StrengthBar({ value }: { value: number }) {
+  function MatchBar({ value }: { value: number }) {
     const filled = Math.round(value / 5);
     const empty = 20 - filled;
     return (
-      <span style={{ fontFamily: "monospace", fontSize: "1rem", letterSpacing: "0" }}>
-        [
+      <span style={{ fontFamily: "monospace", fontSize: "1rem" }}>
         <span style={{ color: "#F0EAD6" }}>{"█".repeat(filled)}</span>
         <span style={{ color: "#F0EAD620" }}>{"░".repeat(empty)}</span>
-        ] {value}%
+        <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", marginLeft: "6px", color: "#a09880" }}>
+          {value}%
+        </span>
       </span>
     );
   }
@@ -456,69 +483,64 @@ function ArchiveScanner({
         <SignalModal
           signal={inspecting}
           onClose={() => setInspecting(null)}
-          onLock={(sig) => {
+          onUse={(sig) => {
             setInspecting(null);
-            onLockSignal(sig);
+            onSelectSignal(sig);
           }}
         />
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {/* Query input */}
-        <div style={{ border: "2px solid #F0EAD6", padding: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {/* Search input */}
+        <div style={{ border: "2px solid #F0EAD6", padding: "14px" }}>
           <div
             style={{
               fontFamily: "'VT323', monospace",
-              fontSize: "1rem",
+              fontSize: "1.15rem",
               color: "#a09880",
-              letterSpacing: "0.1em",
               marginBottom: "8px",
+              letterSpacing: "0.05em",
             }}
           >
-            ACOUSTIC ARCHAEOLOGY // FIRECRAWL UPLINK v4.2
+            What are you looking for?
           </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", marginBottom: "4px" }}>
-                INPUT QUERY &gt;_
-              </div>
-              <textarea
-                rows={2}
-                placeholder="e.g. Mesoamerican blood rituals, Proto-Indo-European chants, Sumerian lamentations..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.15rem" }}
-              />
-            </div>
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+            <textarea
+              rows={2}
+              placeholder="e.g. Ancient Greek, deep desert chants, whispering spirits..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ flex: 1, fontFamily: "'VT323', monospace", fontSize: "1.2rem" }}
+            />
             <button
-              className="ascii-btn"
-              onClick={handleScan}
-              style={{ fontSize: "1.2rem", padding: "8px 16px", marginTop: "24px", whiteSpace: "nowrap" }}
+              onClick={handleSearch}
+              style={{ ...solidBtn, marginTop: "2px", fontSize: "1.25rem", padding: "10px 24px" }}
             >
-              {scanning ? "[ SCANNING... ]" : "[ INITIATE SCAN ]"}
+              {searching ? "Searching..." : "Search"}
             </button>
           </div>
 
-          {/* Scan progress bar */}
-          {(scanning || scanDone) && (
-            <div style={{ marginTop: "10px" }}>
+          {/* Progress bar */}
+          {(searching || searchDone) && (
+            <div style={{ marginTop: "12px" }}>
               <div
                 style={{
                   fontFamily: "'VT323', monospace",
                   fontSize: "1rem",
                   color: "#a09880",
                   marginBottom: "4px",
-                  letterSpacing: "0.08em",
+                  display: "flex",
+                  justifyContent: "space-between",
                 }}
               >
-                {scanning ? "SCANNING CORPUS..." : "SCAN COMPLETE — SIGNALS ISOLATED"}
-                <span style={{ float: "right" }}>{scanProgress}%</span>
+                <span>{searching ? "Searching the archive..." : "Search complete"}</span>
+                <span>{searchProgress}%</span>
               </div>
               <div
                 style={{
-                  height: "10px",
+                  height: "8px",
                   background: "#0a0a0a",
-                  border: "1px solid #F0EAD640",
+                  border: "1px solid #F0EAD630",
                   position: "relative",
                   overflow: "hidden",
                 }}
@@ -529,8 +551,8 @@ function ArchiveScanner({
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    width: `${scanProgress}%`,
-                    background: scanDone ? "#F0EAD6" : "#a09880",
+                    width: `${searchProgress}%`,
+                    background: searchDone ? "#F0EAD6" : "#a09880",
                     transition: "width 0.1s",
                   }}
                 />
@@ -539,44 +561,45 @@ function ArchiveScanner({
           )}
         </div>
 
-        {/* Signal list */}
+        {/* Results table */}
         <div>
           <div
             style={{
               fontFamily: "'VT323', monospace",
               fontSize: "1rem",
               color: "#a09880",
-              letterSpacing: "0.12em",
               marginBottom: "8px",
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <span>// ISOLATED LANGUAGE SIGNALS — {LANGUAGE_SIGNALS.length} DETECTED</span>
-            {scanDone && <span style={{ color: "#4CAF50" }}>● ARCHIVE UPLINK ACTIVE</span>}
+            <span>{LANGUAGE_SIGNALS.length} languages available</span>
+            {searchDone && (
+              <span style={{ color: "#F0EAD6" }}>Showing best matches for your query</span>
+            )}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-            {/* Table header */}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {/* Header row */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "140px 1fr 260px 120px",
-                gap: "0",
+                gridTemplateColumns: "1fr 220px 100px",
                 border: "2px solid #F0EAD6",
                 borderBottom: "none",
-                padding: "6px 12px",
-                background: "#F0EAD610",
+                padding: "8px 14px",
+                background: "#F0EAD60A",
                 fontFamily: "'VT323', monospace",
-                fontSize: "0.95rem",
+                fontSize: "1rem",
                 color: "#a09880",
-                letterSpacing: "0.1em",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}
             >
-              <span>SIGNAL_ID</span>
-              <span>TITLE</span>
-              <span>STRENGTH</span>
-              <span style={{ textAlign: "right" }}>ACTION</span>
+              <span>Name</span>
+              <span>Match</span>
+              <span style={{ textAlign: "right" }}>Action</span>
             </div>
 
             {LANGUAGE_SIGNALS.map((sig, idx) => (
@@ -584,77 +607,52 @@ function ArchiveScanner({
                 key={sig.id}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "140px 1fr 260px 120px",
-                  gap: "0",
+                  gridTemplateColumns: "1fr 220px 100px",
                   border: "2px solid #F0EAD6",
                   borderBottom: idx === LANGUAGE_SIGNALS.length - 1 ? "2px solid #F0EAD6" : "none",
-                  padding: "10px 12px",
+                  padding: "12px 14px",
                   alignItems: "center",
-                  fontFamily: "'VT323', monospace",
                   background: "#121212",
                 }}
               >
-                <span style={{ fontSize: "1rem", color: "#a09880", letterSpacing: "0.05em" }}>
-                  {sig.id}
-                </span>
                 <span
                   style={{
+                    fontFamily: "'VT323', monospace",
                     fontSize: "1.2rem",
-                    letterSpacing: "0.05em",
-                    paddingRight: "12px",
+                    letterSpacing: "0.04em",
                   }}
                 >
                   {sig.title}
                 </span>
-                <span style={{ fontSize: "1.1rem" }}>
-                  <StrengthBar value={sig.strength} />
+                <span>
+                  <MatchBar value={sig.strength} />
                 </span>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
-                    className="ascii-btn"
                     onClick={() => setInspecting(sig)}
-                    style={{ fontSize: "1.1rem" }}
+                    style={{ ...outlineBtn, fontSize: "1.1rem", padding: "6px 14px" }}
                   >
-                    [ INSPECT ]
+                    Details
                   </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Status footer */}
-        <div
-          style={{
-            border: "2px solid #F0EAD630",
-            padding: "8px 12px",
-            fontFamily: "'VT323', monospace",
-            fontSize: "1rem",
-            color: "#a09880",
-            display: "flex",
-            gap: "24px",
-            letterSpacing: "0.08em",
-          }}
-        >
-          <span>UPLINK: <span style={{ color: "#4CAF50" }}>ACTIVE</span></span>
-          <span>AUTH: <span style={{ color: "#4CAF50" }}>GRANTED</span></span>
-          <span>PROTOCOL: <span style={{ color: "#F0EAD6" }}>FIRECRAWL_v3</span></span>
-          <span>CORPUS: <span style={{ color: "#F0EAD6" }}>4 SIGNALS LOADED</span></span>
-        </div>
       </div>
     </>
   );
 }
 
-// ─── Drawer 002: Linguistic Synthesis ────────────────────────────────────────
+// ─── Drawer 2: Create the Voice ───────────────────────────────────────────────
 
 const VOICE_OPTIONS = [
-  { id: "sumerisk", label: "スメル語", sublabel: "SUMERIAN" },
-  { id: "nahuatl", label: "ナワトル語", sublabel: "NAHUATL" },
-  { id: "elamite", label: "エラム語", sublabel: "ELAMITE" },
-  { id: "lydian", label: "リュディア語", sublabel: "LYDIAN" },
-  { id: "linear_a", label: "線形文字Ａ", sublabel: "LINEAR-A" },
-  { id: "mayan", label: "マヤ語", sublabel: "PROTO-MAYAN" },
+  { id: "sumerisk", label: "スメル語", sublabel: "Sumerian" },
+  { id: "nahuatl", label: "ナワトル語", sublabel: "Nahuatl" },
+  { id: "elamite", label: "エラム語", sublabel: "Elamite" },
+  { id: "lydian", label: "リュディア語", sublabel: "Lydian" },
+  { id: "linear_a", label: "線形文字Ａ", sublabel: "Linear-A" },
+  { id: "mayan", label: "マヤ語", sublabel: "Proto-Mayan" },
 ];
 
 const FAKE_WORDS = [
@@ -665,107 +663,102 @@ const FAKE_WORDS = [
   "HA-\nAB-\nCUL",
 ];
 
-function LinguisticSynthesis({ lockedSignal }: { lockedSignal: LanguageSignal | null }) {
+function CreateVoice({ lockedSignal }: { lockedSignal: LanguageSignal | null }) {
   const [inputText, setInputText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("sumerisk");
   const [generatedWord, setGeneratedWord] = useState(FAKE_WORDS[0]);
-  const [synthesizing, setSynthesizing] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    if (lockedSignal) {
-      setGeneratedWord(lockedSignal.phonetic_sample);
-    }
+    if (lockedSignal) setGeneratedWord(lockedSignal.phonetic_sample);
   }, [lockedSignal]);
 
-  function handleSynthesize() {
-    setSynthesizing(true);
+  function handleGenerate() {
+    setGenerating(true);
     let count = 0;
     const interval = setInterval(() => {
       setGeneratedWord(FAKE_WORDS[Math.floor(Math.random() * FAKE_WORDS.length)]);
       count++;
       if (count > 8) {
         clearInterval(interval);
-        setSynthesizing(false);
+        setGenerating(false);
         if (lockedSignal) setGeneratedWord(lockedSignal.phonetic_sample);
       }
     }, 120);
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-      {/* Locked signal banner */}
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Active language banner */}
       {lockedSignal && (
         <div
           style={{
             border: "2px solid #F0EAD6",
             borderBottom: "none",
-            padding: "8px 14px",
-            background: "#F0EAD610",
+            padding: "10px 16px",
+            background: "#F0EAD60A",
             fontFamily: "'VT323', monospace",
-            fontSize: "1.1rem",
+            fontSize: "1.15rem",
             color: "#a09880",
-            letterSpacing: "0.1em",
             display: "flex",
-            gap: "16px",
+            gap: "20px",
             alignItems: "center",
           }}
         >
-          <span style={{ color: "#4CAF50" }}>● SIGNAL LOCKED</span>
-          <span style={{ color: "#F0EAD6" }}>{lockedSignal.id} // {lockedSignal.title}</span>
-          <span>STRENGTH: {lockedSignal.strength}%</span>
+          <span style={{ color: "#F0EAD6" }}>Active language:</span>
+          <span>{lockedSignal.title}</span>
+          <span>Match {lockedSignal.strength}%</span>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0", minHeight: "320px" }}>
-        {/* Column 1: English Input */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", minHeight: "320px" }}>
+        {/* Column 1: Text input */}
         <div
           style={{
             border: "2px solid #F0EAD6",
             borderRight: "none",
-            padding: "12px",
+            padding: "14px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.1em" }}>
-            COL.01 // ENGLISH INPUT
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            What should the AI say?
           </div>
-          <div style={{ borderTop: "1px solid #F0EAD640", paddingTop: "8px" }}>
+          <div style={{ borderTop: "1px solid #F0EAD630", paddingTop: "10px" }}>
             <textarea
-              rows={6}
+              rows={7}
               placeholder={
                 lockedSignal
-                  ? `Signal loaded: ${lockedSignal.title}. Enter English text to synthesize...`
-                  : "Enter English text to translate into the dead language phoneme matrix..."
+                  ? `Language set: ${lockedSignal.title}. Type what you want the AI to vocalize...`
+                  : "Type what you want the AI to vocalize in the chosen language..."
               }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.15rem" }}
             />
           </div>
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginTop: "auto" }}>
-            <div>CHAR COUNT: {inputText.length}</div>
-            <div>PHONEME SLOTS: {Math.floor(inputText.length * 0.7)}</div>
-            <div>ENTROPY: {inputText.length > 0 ? "HIGH" : "NULL"}</div>
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginTop: "auto", lineHeight: 1.6 }}>
+            <div>Characters: {inputText.length}</div>
             {lockedSignal && (
               <>
-                <div style={{ borderTop: "1px solid #F0EAD630", marginTop: "6px", paddingTop: "6px" }}>
-                  GUTTURAL: {lockedSignal.dna.guttural}%
+                <div style={{ borderTop: "1px solid #F0EAD625", marginTop: "8px", paddingTop: "8px" }}>
+                  Tone: {lockedSignal.dna.guttural > 60 ? "Harsh" : "Smooth"}
                 </div>
-                <div>SIBILANT: {lockedSignal.dna.sibilant}%</div>
-                <div>VOCALIC: {lockedSignal.dna.vocalic}%</div>
+                <div>Pace: {lockedSignal.dna.sibilant > 60 ? "Fast" : "Slow"}</div>
+                <div>Depth: {lockedSignal.dna.vocalic > 60 ? "Deep" : "High"}</div>
               </>
             )}
           </div>
         </div>
 
-        {/* Column 2: Decrypted Script */}
+        {/* Column 2: Pronunciation Guide */}
         <div
           style={{
             border: "2px solid #F0EAD6",
             borderRight: "none",
-            padding: "12px",
+            padding: "14px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -778,19 +771,20 @@ function LinguisticSynthesis({ lockedSignal }: { lockedSignal: LanguageSignal | 
               fontFamily: "'VT323', monospace",
               fontSize: "1rem",
               color: "#a09880",
-              letterSpacing: "0.1em",
+              letterSpacing: "0.06em",
               alignSelf: "flex-start",
+              textTransform: "uppercase",
             }}
           >
-            COL.02 // DECRYPTED SCRIPT
+            Pronunciation Guide
           </div>
           <div
             style={{
               fontFamily: "'Rubik Mono One', monospace",
               fontSize: "3rem",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.04em",
               textAlign: "center",
-              lineHeight: "1",
+              lineHeight: "1.05",
               border: "3px solid #F0EAD6",
               padding: "16px 24px",
               width: "100%",
@@ -799,36 +793,44 @@ function LinguisticSynthesis({ lockedSignal }: { lockedSignal: LanguageSignal | 
               alignItems: "center",
               justifyContent: "center",
               whiteSpace: "pre-line",
-              color: synthesizing ? "#a09880" : "#F0EAD6",
+              color: generating ? "#a09880" : "#F0EAD6",
               transition: "color 0.1s",
             }}
           >
             {generatedWord}
           </div>
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", alignSelf: "flex-start" }}>
-            PHONEME MATRIX: {synthesizing ? "COMPUTING..." : "RESOLVED"}
-            {lockedSignal && !synthesizing && (
-              <div style={{ color: "#4CAF50" }}>SOURCE: {lockedSignal.id}</div>
+          <div
+            style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: "1rem",
+              color: "#a09880",
+              alignSelf: "flex-start",
+              lineHeight: 1.5,
+            }}
+          >
+            {generating ? "Generating..." : "Ready to play"}
+            {lockedSignal && !generating && (
+              <div style={{ color: "#F0EAD6" }}>Source: {lockedSignal.title}</div>
             )}
           </div>
         </div>
 
-        {/* Column 3: Voice Selectors + Synth Button */}
+        {/* Column 3: Voice style + Generate */}
         <div
           style={{
             border: "2px solid #F0EAD6",
-            padding: "12px",
+            padding: "14px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.1em" }}>
-            COL.03 // VOICE MATRIX
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Voice Style
           </div>
-          <div style={{ borderTop: "1px solid #F0EAD640", paddingTop: "8px", flex: 1 }}>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", marginBottom: "8px" }}>
-              SELECT PHONEME ENGINE:
+          <div style={{ borderTop: "1px solid #F0EAD630", paddingTop: "10px", flex: 1 }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", marginBottom: "10px", color: "#a09880" }}>
+              Select a voice style:
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
               {VOICE_OPTIONS.map((opt) => (
@@ -841,24 +843,29 @@ function LinguisticSynthesis({ lockedSignal }: { lockedSignal: LanguageSignal | 
                     border: "2px solid #F0EAD6",
                     padding: "8px 6px",
                     fontFamily: "'VT323', monospace",
-                    fontSize: "1rem",
                     cursor: "pointer",
                     textAlign: "left",
                     lineHeight: "1.2",
                   }}
                 >
                   <div style={{ fontSize: "1.3rem" }}>{opt.label}</div>
-                  <div style={{ fontSize: "0.85rem", opacity: 0.7 }}>{opt.sublabel}</div>
+                  <div style={{ fontSize: "0.9rem", opacity: 0.7 }}>{opt.sublabel}</div>
                 </button>
               ))}
             </div>
           </div>
           <button
-            className="inverted-btn"
-            onClick={handleSynthesize}
-            style={{ marginTop: "auto", fontSize: "1.3rem", padding: "12px" }}
+            onClick={handleGenerate}
+            style={{
+              ...solidBtn,
+              marginTop: "auto",
+              fontSize: "1.25rem",
+              padding: "14px",
+              width: "100%",
+              letterSpacing: "0.06em",
+            }}
           >
-            {synthesizing ? "[ COMPUTING... ]" : "[ INITIATE SYNTHESIS ]"}
+            {generating ? "Generating..." : "Generate Audio"}
           </button>
         </div>
       </div>
@@ -866,7 +873,7 @@ function LinguisticSynthesis({ lockedSignal }: { lockedSignal: LanguageSignal | 
   );
 }
 
-// ─── Drawer 003: Audio Sequencer ─────────────────────────────────────────────
+// ─── Drawer 3: Refine the Sound ───────────────────────────────────────────────
 
 const BASE_HEIGHTS = [8, 20, 35, 18, 42, 28, 12, 38, 22, 45, 16, 30, 40, 14, 25, 36, 10, 44, 20, 32, 8, 38, 26, 15, 40, 22, 33, 12, 48, 18, 28, 42, 9, 35, 24, 16, 44, 30, 11, 38, 20, 46, 14, 32, 28, 41, 7, 36, 23, 17];
 
@@ -874,10 +881,7 @@ function WaveformDisplay({ playing }: { playing: boolean }) {
   const [animHeights, setAnimHeights] = useState<number[]>(BASE_HEIGHTS);
 
   useEffect(() => {
-    if (!playing) {
-      setAnimHeights(BASE_HEIGHTS);
-      return;
-    }
+    if (!playing) { setAnimHeights(BASE_HEIGHTS); return; }
     const interval = setInterval(() => {
       setAnimHeights(BASE_HEIGHTS.map((h) => Math.max(4, h + Math.floor(Math.random() * 10 - 5))));
     }, 150);
@@ -897,94 +901,212 @@ function WaveformDisplay({ playing }: { playing: boolean }) {
   );
 }
 
-function AudioSequencer() {
+function RefineSound({ lockedSignal }: { lockedSignal: LanguageSignal | null }) {
   const [pitch, setPitch] = useState(50);
-  const [reverb, setReverb] = useState(30);
-  const [distortion, setDistortion] = useState(20);
-  const [track1Playing, setTrack1Playing] = useState(false);
-  const [track2Playing, setTrack2Playing] = useState(false);
-  const [track1Muted, setTrack1Muted] = useState(false);
-  const [track2Muted, setTrack2Muted] = useState(false);
+  const [echo, setEcho] = useState(30);
+  const [layers, setLayers] = useState(20);
+  const [tracks, setTracks] = useState([
+    { id: 1, name: lockedSignal?.title ?? "Base Layer", playing: false, muted: false },
+    { id: 2, name: "Ambient Layer", playing: false, muted: false },
+  ]);
 
-  function renderSlider(label: string, value: number, onChange: (v: number) => void, color?: string) {
+  useEffect(() => {
+    if (lockedSignal) {
+      setTracks((prev) =>
+        prev.map((t) => (t.id === 1 ? { ...t, name: lockedSignal.title } : t))
+      );
+    }
+  }, [lockedSignal]);
+
+  function updateTrack(id: number, patch: Partial<(typeof tracks)[0]>) {
+    setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }
+
+  function deleteTrack(id: number) {
+    setTracks((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function renderSlider(
+    label: string,
+    leftLabel: string,
+    rightLabel: string,
+    value: number,
+    onChange: (v: number) => void,
+  ) {
     const filled = Math.floor(value / 10);
     const empty = 10 - filled;
-    const ascii = `[${"=".repeat(filled)}|${" ".repeat(empty)}]`;
+    const bar = `${"=".repeat(filled)}|${" ".repeat(empty)}`;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", letterSpacing: "0.15em", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "#a09880" }}>{label}</span>
-          <span>{value}%</span>
+        <div
+          style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: "1.05rem",
+            letterSpacing: "0.1em",
+            display: "flex",
+            justifyContent: "space-between",
+            textTransform: "uppercase",
+          }}
+        >
+          <span>{label}</span>
+          <span style={{ color: "#a09880", fontSize: "0.95rem" }}>{value}%</span>
         </div>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "-0.02em", color: color || "#F0EAD6" }}>
-          {ascii}
+        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", color: "#F0EAD6", letterSpacing: "-0.02em" }}>
+          {bar}
         </div>
-        <input type="range" min={0} max={100} value={value} onChange={(e) => onChange(Number(e.target.value))} style={{ width: "100%" }} />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          style={{ width: "100%" }}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880" }}>
+          <span>{leftLabel}</span>
+          <span>{rightLabel}</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", minHeight: "360px" }}>
-      <div style={{ border: "2px solid #F0EAD6", padding: "16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px" }}>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", gridColumn: "1/-1", marginBottom: "-8px", letterSpacing: "0.1em" }}>
-          // SIGNAL PROCESSING UNIT
-        </div>
-        {renderSlider("PITCH", pitch, setPitch)}
-        {renderSlider("REVERB", reverb, setReverb, "#b8d4b8")}
-        {renderSlider("DISTORTION", distortion, setDistortion, "#d4b8b8")}
+      {/* Sliders */}
+      <div
+        style={{
+          border: "2px solid #F0EAD6",
+          padding: "18px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: "28px",
+        }}
+      >
+        {renderSlider("Pitch", "Low", "High", pitch, setPitch)}
+        {renderSlider("Echo", "Dry", "Wet", echo, setEcho)}
+        {renderSlider("Layers", "Single", "Full", layers, setLayers)}
       </div>
 
-      <div style={{ border: "2px solid #F0EAD6", padding: "16px" }}>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.1em", marginBottom: "12px" }}>
-          // AUDIO TIMELINE — 2 TRACKS
+      {/* Timeline */}
+      <div style={{ border: "2px solid #F0EAD6", padding: "18px" }}>
+        <div
+          style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: "1rem",
+            color: "#a09880",
+            letterSpacing: "0.06em",
+            marginBottom: "14px",
+            textTransform: "uppercase",
+          }}
+        >
+          Audio Tracks
         </div>
 
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", display: "flex", marginBottom: "4px", paddingLeft: "240px" }}>
-          {["0:00", "0:15", "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00"].map((t) => (
-            <span key={t} style={{ flex: 1 }}>{t}</span>
-          ))}
-        </div>
+        {tracks.length === 0 && (
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", padding: "20px 0" }}>
+            No tracks. Add a language from the Find a Language step.
+          </div>
+        )}
 
-        {[
-          { id: 1, name: "TRK_001", sub: "PHONEME_BASE", playing: track1Playing, muted: track1Muted, setPlaying: setTrack1Playing, setMuted: setTrack1Muted },
-          { id: 2, name: "TRK_002", sub: "RITUAL_REVERB", playing: track2Playing, muted: track2Muted, setPlaying: setTrack2Playing, setMuted: setTrack2Muted },
-        ].map((trk) => (
+        {tracks.map((trk) => (
           <div
             key={trk.id}
-            style={{ display: "flex", alignItems: "center", gap: "8px", border: "2px solid #F0EAD6", marginBottom: "8px", padding: "8px", background: "#121212", opacity: trk.muted ? 0.5 : 1 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              border: "2px solid #F0EAD6",
+              marginBottom: "8px",
+              padding: "10px",
+              background: "#121212",
+              opacity: trk.muted ? 0.45 : 1,
+            }}
           >
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", minWidth: "100px", letterSpacing: "0.08em" }}>
+            <div
+              style={{
+                fontFamily: "'VT323', monospace",
+                fontSize: "1.1rem",
+                minWidth: "140px",
+                letterSpacing: "0.04em",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {trk.name}
-              <div style={{ fontSize: "0.85rem", color: "#a09880" }}>{trk.sub}</div>
             </div>
-            <button className="ascii-btn" onClick={() => trk.setPlaying(!trk.playing)} style={{ minWidth: "90px" }}>
-              {trk.playing ? "[ STOP ]" : "[ PLAY ]"}
+            <button
+              onClick={() => updateTrack(trk.id, { playing: !trk.playing })}
+              style={{ ...solidBtn, fontSize: "1.05rem", padding: "6px 14px", minWidth: "72px" }}
+            >
+              {trk.playing ? "Stop" : "Play"}
             </button>
             <button
-              className="ascii-btn"
-              onClick={() => trk.setMuted(!trk.muted)}
-              style={{ minWidth: "90px", background: trk.muted ? "#F0EAD6" : "#121212", color: trk.muted ? "#121212" : "#F0EAD6" }}
+              onClick={() => updateTrack(trk.id, { muted: !trk.muted })}
+              style={{
+                ...outlineBtn,
+                fontSize: "1.05rem",
+                padding: "6px 14px",
+                minWidth: "72px",
+                ...(trk.muted ? { background: "#F0EAD6", color: "#121212" } : {}),
+              }}
             >
-              {trk.muted ? "[ UNMUTE ]" : "[ MUTE ]"}
+              {trk.muted ? "Unmute" : "Mute"}
             </button>
-            <div style={{ flex: 1, border: "1px solid #F0EAD630", background: "#0a0a0a", height: "52px", display: "flex" }}>
+            <button
+              onClick={() => deleteTrack(trk.id)}
+              style={{
+                background: "#121212",
+                color: "#a09880",
+                border: "2px solid #a09880",
+                fontFamily: "'VT323', monospace",
+                fontSize: "1.05rem",
+                cursor: "pointer",
+                padding: "6px 14px",
+              }}
+            >
+              Delete
+            </button>
+            <div
+              style={{
+                flex: 1,
+                border: "1px solid #F0EAD625",
+                background: "#0a0a0a",
+                height: "52px",
+                display: "flex",
+              }}
+            >
               <WaveformDisplay playing={trk.playing} />
             </div>
           </div>
         ))}
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "12px", fontFamily: "'VT323', monospace" }}>
-          <button className="ascii-btn" onClick={() => { setTrack1Playing(true); setTrack2Playing(true); }}>[▶ PLAY ALL]</button>
-          <button className="ascii-btn" onClick={() => { setTrack1Playing(false); setTrack2Playing(false); }}>[■ STOP ALL]</button>
-          <button className="ascii-btn">[ REC ]</button>
-          <button className="ascii-btn">[ EXPORT ]</button>
-          <div style={{ marginLeft: "auto", border: "2px solid #F0EAD6", padding: "4px 12px", fontSize: "1.1rem", color: "#a09880", display: "flex", alignItems: "center", gap: "8px" }}>
-            BPM: <span style={{ color: "#F0EAD6" }}>120</span>
-            <span style={{ color: "#F0EAD640" }}>|</span>
-            KEY: <span style={{ color: "#F0EAD6" }}>Dm</span>
-            <span style={{ color: "#F0EAD640" }}>|</span>
-            MODE: <span style={{ color: "#F0EAD6" }}>RITUAL</span>
+        {/* Transport row */}
+        <div style={{ display: "flex", gap: "10px", marginTop: "14px", flexWrap: "wrap" }}>
+          <button onClick={() => setTracks((p) => p.map((t) => ({ ...t, playing: true })))} style={solidBtn}>
+            Play All
+          </button>
+          <button onClick={() => setTracks((p) => p.map((t) => ({ ...t, playing: false })))} style={outlineBtn}>
+            Stop All
+          </button>
+          <button style={outlineBtn}>Record</button>
+          <button style={outlineBtn}>Export</button>
+          <div
+            style={{
+              marginLeft: "auto",
+              border: "2px solid #F0EAD6",
+              padding: "6px 14px",
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.1rem",
+              color: "#a09880",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            Tempo: <span style={{ color: "#F0EAD6" }}>120</span>
+            <span style={{ color: "#F0EAD625" }}>|</span>
+            Key: <span style={{ color: "#F0EAD6" }}>Dm</span>
           </div>
         </div>
       </div>
@@ -1002,83 +1124,114 @@ export default function App() {
     setOpenDrawer((prev) => (prev === n ? null : n));
   }
 
-  function handleLockSignal(signal: LanguageSignal) {
+  function handleSelectSignal(signal: LanguageSignal) {
     setLockedSignal(signal);
     setOpenDrawer(2);
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "#121212", color: "#F0EAD6", fontFamily: "'VT323', monospace" }}>
-      {/* Top Marquee */}
-      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#121212", borderBottom: "4px solid #F0EAD6", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 20px", borderBottom: "2px solid #F0EAD620" }}>
-          <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.8rem", letterSpacing: "0.15em", color: "#F0EAD6" }}>
+      {/* Header */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          background: "#121212",
+          borderBottom: "4px solid #F0EAD6",
+          overflow: "hidden",
+        }}
+      >
+        {/* Title bar */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "10px 24px",
+            borderBottom: "2px solid #F0EAD615",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Rubik Mono One', monospace",
+              fontSize: "1.7rem",
+              letterSpacing: "0.12em",
+            }}
+          >
             BABELSOUNDS
           </div>
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.1em" }}>
-            <span style={{ color: "#4CAF50" }}>●</span> SYSTEM ACTIVE // v1.0.0 // {new Date().toISOString().split("T")[0]}
-            {lockedSignal && (
-              <span style={{ marginLeft: "16px", color: "#F0EAD6" }}>
-                // LOCKED: {lockedSignal.id}
-              </span>
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>
+            {lockedSignal ? (
+              <span style={{ color: "#F0EAD6" }}>Language: {lockedSignal.title}</span>
+            ) : (
+              <span>No language selected</span>
             )}
           </div>
         </div>
-        <div style={{ padding: "6px 0", overflow: "hidden", background: "#0a0a0a" }}>
+
+        {/* Slow marquee */}
+        <div style={{ padding: "5px 0", overflow: "hidden", background: "#0d0d0d" }}>
           <span
             className="marquee-text"
-            style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "#F0EAD6" }}
+            style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.15rem",
+              letterSpacing: "0.18em",
+              color: "#a09880",
+              animationDuration: "40s",
+            }}
           >
-            &gt;&gt;&gt; SYSTEM SECURE // BABELSOUNDS_V1.0 // ARCHIVE UPLINK ACTIVE // PHONEME DATABASE: ONLINE // DEAD LANGUAGE CORPUS: LOADED // FIRECRAWL ENGINE: READY // SIGNAL PROCESSING: NOMINAL // RITUAL SYNTHESIS: ARMED &lt;&lt;&lt; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &gt;&gt;&gt; SYSTEM SECURE // BABELSOUNDS_V1.0 // ARCHIVE UPLINK ACTIVE // PHONEME DATABASE: ONLINE // DEAD LANGUAGE CORPUS: LOADED // FIRECRAWL ENGINE: READY // SIGNAL PROCESSING: NOMINAL // RITUAL SYNTHESIS: ARMED &lt;&lt;&lt;
+            Exploring the sounds of lost civilizations and ancient myths. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exploring the sounds of lost civilizations and ancient myths. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exploring the sounds of lost civilizations and ancient myths.
           </span>
         </div>
       </div>
 
       {/* Drawers */}
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        <div style={{ borderTop: "2px solid #F0EAD6", marginTop: "0" }} />
+        <div style={{ borderTop: "2px solid #F0EAD6" }} />
 
         <RackDrawer
-          number="001"
-          title="ARCHIVE SCANNER // RESEARCH PHASE"
+          number="1"
+          title="Find a Language"
           isOpen={openDrawer === 1}
           onToggle={() => toggleDrawer(1)}
         >
-          <ArchiveScanner onLockSignal={handleLockSignal} />
+          <FindLanguage onSelectSignal={handleSelectSignal} />
         </RackDrawer>
 
         <RackDrawer
-          number="002"
-          title="LINGUISTIC SYNTHESIS // GENERATION PHASE"
+          number="2"
+          title="Create the Voice"
           isOpen={openDrawer === 2}
           onToggle={() => toggleDrawer(2)}
         >
-          <LinguisticSynthesis lockedSignal={lockedSignal} />
+          <CreateVoice lockedSignal={lockedSignal} />
         </RackDrawer>
 
         <RackDrawer
-          number="003"
-          title="AUDIO SEQUENCER // SOUND DESIGN PHASE"
+          number="3"
+          title="Refine the Sound"
           isOpen={openDrawer === 3}
           onToggle={() => toggleDrawer(3)}
         >
-          <AudioSequencer />
+          <RefineSound lockedSignal={lockedSignal} />
         </RackDrawer>
 
+        {/* Footer */}
         <div
           style={{
             borderTop: "2px solid #F0EAD6",
-            padding: "12px 16px",
+            padding: "12px 24px",
             fontFamily: "'VT323', monospace",
             fontSize: "1rem",
             color: "#a09880",
             display: "flex",
             justifyContent: "space-between",
-            letterSpacing: "0.08em",
           }}
         >
-          <span>BABELSOUNDS // DEAD LANGUAGE AUDIO SYNTHESIS TOOL</span>
-          <span>BUILD: 001.0.0 // STATUS: OPERATIONAL</span>
+          <span>Babelsounds — Dead Language Audio Synthesis</span>
+          <span>v1.0.0</span>
         </div>
       </div>
     </div>
