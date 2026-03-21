@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Screen = "archives" | "recording" | "soundscape";
+type Screen = "archives" | "transition" | "recording" | "soundscape";
 
 interface LexiconSample {
   word: string;
@@ -877,6 +877,49 @@ function TrackRow({
   );
 }
 
+// ─── Data Synthesis Transition ────────────────────────────────────────────────
+
+function DataSynthesisTransition({ onComplete }: { onComplete: () => void }) {
+  const [visibleLines, setVisibleLines] = useState(0);
+  const [cursorOn, setCursorOn] = useState(true);
+
+  const lines = [
+    "> INITIATING NEURAL HANDOFF...",
+    "> EXTRACTING PHONETIC INVENTORY...",
+    "> SYNTHESIZING VOCAL PROFILE...",
+    "> VOCAL LAB UPLINK ESTABLISHED.",
+  ];
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    lines.forEach((_, i) => {
+      timers.push(setTimeout(() => setVisibleLines(i + 1), i * 500));
+    });
+    timers.push(setTimeout(() => onComplete(), 2100));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCursorOn((v) => !v), 480);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "#121212", display: "flex", alignItems: "flex-end", padding: "64px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {lines.slice(0, visibleLines).map((line, i) => (
+          <div key={i} style={{ fontFamily: "'VT323', monospace", fontSize: "1.5rem", color: "#F0EAD6", letterSpacing: "0.05em" }}>
+            {line}
+            {i === visibleLines - 1 && (
+              <span style={{ opacity: cursorOn ? 1 : 0 }}> _</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -886,7 +929,7 @@ export default function App() {
 
   function handleSelectLanguage(sig: LanguageSignal) {
     setSelectedLanguage(sig);
-    setScreen("recording");
+    setScreen("transition");
   }
 
   function handleAddClip(clip: AudioClip) {
@@ -895,6 +938,10 @@ export default function App() {
 
   function handleDeleteClip(id: string) {
     setClipLibrary((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  if (screen === "transition") {
+    return <DataSynthesisTransition onComplete={() => setScreen("recording")} />;
   }
 
   if (screen === "recording" && selectedLanguage) {
