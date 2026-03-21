@@ -405,7 +405,7 @@ function RecordingScreen({
   return (
     <div className="screen-fade-in" style={{ minHeight: "100vh", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ borderBottom: "4px solid #F0EAD6", padding: "0 24px", display: "flex", alignItems: "stretch", minHeight: "60px", flexShrink: 0 }}>
+      <div style={{ borderBottom: "4px solid #F0EAD6", padding: "0 0 0 0", display: "flex", alignItems: "stretch", minHeight: "60px", flexShrink: 0 }}>
         <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back</button>
         <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 24px", gap: "16px" }}>
           <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.12em" }}>BABELSOUNDS</span>
@@ -414,58 +414,63 @@ function RecordingScreen({
           <span style={{ color: "#F0EAD625" }}>|</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
         </div>
+        <button
+          onClick={onProceed}
+          style={{ ...solidBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 28px", letterSpacing: "0.08em" }}
+        >
+          Proceed to Soundscape →
+        </button>
       </div>
 
       {/* Two-column body */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 0 }}>
         {/* Left — Input */}
         <div style={{ borderRight: "4px solid #F0EAD6", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div>
-            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "6px" }}>The Vocal Lab</div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880" }}>Design a voice and script phrases in {language.title}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+            <div>
+              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", marginBottom: "4px" }}>The Vocal Lab</div>
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#a09880" }}>Design a voice and script phrases in {language.title}</div>
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !scriptPrompt.trim()}
+              style={{ ...solidBtn, fontSize: "1.1rem", padding: "10px 20px", flexShrink: 0, opacity: generating || !scriptPrompt.trim() ? 0.45 : 1 }}
+            >
+              {generating ? "Generating..." : "Generate Audio"}
+            </button>
           </div>
 
           <div style={{ borderTop: "2px solid #F0EAD630" }} />
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
-            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, minHeight: 0 }}>
+            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
               Voice Description
             </label>
             <textarea
-              rows={4}
               placeholder="Describe the speaker (e.g., A raspy old man, a booming giant...)"
               value={voicePrompt}
               onChange={(e) => setVoicePrompt(e.target.value)}
-              style={{ width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
+              style={{ flex: 1, width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
             />
 
-            <div style={{ borderTop: "2px solid #F0EAD620", margin: "4px 0" }} />
+            <div style={{ borderTop: "2px solid #F0EAD620", flexShrink: 0 }} />
 
-            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            <label style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0 }}>
               What should the AI say?
             </label>
             <textarea
-              rows={4}
               placeholder="Type a phrase to vocalize..."
               value={scriptPrompt}
               onChange={(e) => setScriptPrompt(e.target.value)}
-              style={{ width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
+              style={{ flex: 1, width: "100%", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "16px", resize: "none" }}
             />
 
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", flexShrink: 0 }}>
               Tone: {language.dna.guttural > 60 ? "Harsh" : "Smooth"} &nbsp;·&nbsp;
               Pace: {language.dna.sibilant > 60 ? "Fast" : "Slow"} &nbsp;·&nbsp;
               Depth: {language.dna.vocalic > 60 ? "Deep" : "High"}
             </div>
           </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !scriptPrompt.trim()}
-            style={{ ...solidBtn, fontSize: "1.3rem", padding: "16px", width: "100%", opacity: generating || !scriptPrompt.trim() ? 0.5 : 1 }}
-          >
-            {generating ? "Generating..." : "Generate Audio"}
-          </button>
         </div>
 
         {/* Right — Clip Library */}
@@ -510,15 +515,6 @@ function RecordingScreen({
         </div>
       </div>
 
-      {/* Bottom action */}
-      <div style={{ borderTop: "4px solid #F0EAD6", flexShrink: 0 }}>
-        <button
-          onClick={onProceed}
-          style={{ ...solidBtn, width: "100%", fontSize: "1.4rem", padding: "20px", letterSpacing: "0.1em", border: "none" }}
-        >
-          Proceed to Soundscape →
-        </button>
-      </div>
     </div>
   );
 }
