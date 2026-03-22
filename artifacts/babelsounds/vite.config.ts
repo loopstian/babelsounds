@@ -74,5 +74,6 @@ export default defineConfig({
   },
   define: {
     "import.meta.env.VITE_GEMINI_SECRET": JSON.stringify(process.env.GEMINI_SECRET ?? ""),
+    "import.meta.env.VITE_FIRECRAWL_SECRET": JSON.stringify(process.env.FIRECRAWL_SECRET ?? ""),
   },
 });
