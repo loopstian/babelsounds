@@ -166,6 +166,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -217,10 +220,6 @@ importers:
         version: 3.1.0
 
   artifacts/babelsounds:
-    dependencies:
-      '@google/generative-ai':
-        specifier: ^0.24.1
-        version: 0.24.1
     devDependencies:
       '@hookform/resolvers':
         specifier: ^3.10.0

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -291,26 +290,13 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
     }, 120);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_SECRET as string;
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
-        systemInstruction: `You are a linguistic archaeologist. The user will give you a thematic concept for a sound or language (e.g., "spooky cave talk"). Your job is to identify a real historical, extinct, or mythological language that fits this theme (e.g., "Nahuatl", "Akkadian", "Old Norse").
-
-You must return a raw JSON array containing exactly three objects. Each object represents a highly targeted search query for a specific database.
-
-The JSON format MUST be exactly this:
-[
-  { "site": "wikipedia.org", "query": "[Language Name] phonology history acoustics" },
-  { "site": "phoible.org", "query": "[Language Name] phonetic inventory consonants vowels" },
-  { "site": "en.wiktionary.org", "query": "[Language Name] IPA pronunciation etymology" }
-]
-Do not include markdown formatting like \`\`\`json. Return ONLY the raw array.`,
+      const res = await fetch(`${import.meta.env.BASE_URL}api/research`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userPrompt: query.trim() }),
       });
-
-      const result = await model.generateContent(query.trim());
-      const text = result.response.text().trim();
-      const parsed: { site: string; query: string }[] = JSON.parse(text);
+      if (!res.ok) throw new Error(`Research API returned ${res.status}`);
+      const { queries: parsed } = (await res.json()) as { queries: { site: string; query: string }[] };
       console.log("[Babelsounds] Triangulated search queries:", parsed);
 
       const proxyUrl = `${import.meta.env.BASE_URL}firecrawl-proxy`;

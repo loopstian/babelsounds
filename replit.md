@@ -55,13 +55,17 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
+- Entry: `src/index.ts` — reads `PORT`, starts Express (currently port 8080)
 - App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
+- Routes: `src/routes/index.ts` mounts sub-routers
+  - `src/routes/health.ts` — `GET /api/healthz`
+  - `src/routes/research.ts` — `POST /api/research` — accepts `{ userPrompt }`, calls Gemini `gemini-2.5-flash-lite` with linguistic archaeologist system prompt, returns `{ queries: [{site, query}] }` (3 triangulated search queries for Wikipedia, PHOIBLE, Wiktionary)
+- Depends on: `@workspace/db`, `@workspace/api-zod`, `@google/generative-ai`
+- Secrets used: `GEMINI_SECRET` (server-side only, never exposed to browser)
 - `pnpm --filter @workspace/api-server run dev` — run the dev server
 - `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
 - Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- Babelsounds frontend reaches this server via Vite dev proxy (`/api/*` → `http://localhost:8080`)
 
 ### `lib/db` (`@workspace/db`)
 

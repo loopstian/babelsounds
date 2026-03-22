@@ -67,6 +67,10 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
+      [`${basePath}api`]: {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
       [`${basePath}firecrawl-proxy`]: {
         target: "https://api.firecrawl.dev",
         changeOrigin: true,
@@ -82,7 +86,5 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
   },
-  define: {
-    "import.meta.env.VITE_GEMINI_SECRET": JSON.stringify(process.env.GEMINI_SECRET ?? ""),
-  },
+  define: {},
 });
