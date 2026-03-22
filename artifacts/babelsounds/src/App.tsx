@@ -313,22 +313,21 @@ Do not include markdown formatting like \`\`\`json. Return ONLY the raw array.`,
       const parsed: { site: string; query: string }[] = JSON.parse(text);
       console.log("[Babelsounds] Triangulated search queries:", parsed);
 
-      const firecrawlKey = import.meta.env.VITE_FIRECRAWL_SECRET as string;
+      const proxyUrl = `${import.meta.env.BASE_URL}firecrawl-proxy`;
+
       const scrapedResults = await Promise.all(
         parsed.map(async (item) => {
           try {
-            const res = await fetch("https://api.firecrawl.dev/v1/search", {
+            const res = await fetch(proxyUrl, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${firecrawlKey}`,
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 query: `site:${item.site} ${item.query}`,
                 limit: 1,
                 scrapeOptions: { formats: ["markdown"] },
               }),
             });
+            if (!res.ok) throw new Error(`Firecrawl proxy returned ${res.status}`);
             const json = await res.json();
             const markdown: string = json?.data?.[0]?.markdown ?? "";
             return { site: item.site, markdown };

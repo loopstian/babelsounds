@@ -66,6 +66,16 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    proxy: {
+      [`${basePath}firecrawl-proxy`]: {
+        target: "https://api.firecrawl.dev",
+        changeOrigin: true,
+        rewrite: () => "/v1/search",
+        headers: {
+          Authorization: `Bearer ${process.env.FIRECRAWL_SECRET ?? ""}`,
+        },
+      },
+    },
   },
   preview: {
     port,
@@ -74,6 +84,5 @@ export default defineConfig({
   },
   define: {
     "import.meta.env.VITE_GEMINI_SECRET": JSON.stringify(process.env.GEMINI_SECRET ?? ""),
-    "import.meta.env.VITE_FIRECRAWL_SECRET": JSON.stringify(process.env.FIRECRAWL_SECRET ?? ""),
   },
 });
