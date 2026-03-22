@@ -614,7 +614,41 @@ function RecordingScreen({
   );
 }
 
-// ─── SCREEN 3: The Interrogation Room ────────────────────────────────────────
+// ─── SCREEN 3: The Interrogation Terminal ─────────────────────────────────────
+
+const MOCK_EXCHANGES: Record<string, { phonetic: string; english: string }[]> = {
+  arc_01: [
+    { phonetic: "> \"Xōch-tla... Quoo-maal... Xibalba-tl!\"", english: "I HAVE BEEN AWAKE SINCE THE STONE BLED." },
+    { phonetic: "> \"Maa'ya'tl... Tla-quoo-tziin...\"", english: "YOUR KIND BUILDS DOORS IT CANNOT OPEN." },
+    { phonetic: "> \"Camazotz-tl! Tēzca-ooc!\"", english: "THE BAT GOD REMEMBERS EVERY NAME." },
+    { phonetic: "> \"Āōtl-xōch... Tla-maa-tl...\"", english: "BLOOD IS THE ONLY HONEST LANGUAGE." },
+    { phonetic: "> \"Xōch-uitl! Quoo-maal!\"", english: "XIBALBA DOES NOT NEGOTIATE." },
+  ],
+  arc_02: [
+    { phonetic: "> \"Shaak-haa... Kh'aabu-sset...\"", english: "THE SCALE HAS BEEN WAITING FOR YOUR HEART." },
+    { phonetic: "> \"HAARR-shenu! Khuun-sseth!\"", english: "ANUBIS WEIGHED A THOUSAND BEFORE YOU." },
+    { phonetic: "> \"Sh'aa... kha-raa... haarr...\"", english: "TRUTH IS HEAVIER THAN YOU IMAGINED." },
+    { phonetic: "> \"Shaakha-raa! Kh'aabu!\"", english: "THE HALL OF TWO TRUTHS IS ALREADY ASSEMBLED." },
+    { phonetic: "> \"Haarr-aabu... sseenu...\"", english: "YOU ARRIVED THE MOMENT YOU WERE BORN." },
+  ],
+  arc_03: [
+    { phonetic: "> \"Käläw-öng... Nüm-ängäl...\"", english: "THE DRUM CALLED YOU ACROSS THREE WORLDS." },
+    { phonetic: "> \"Wäng-äläm-ö... käläw...\"", english: "WHAT YOU SEEK GROWS IN THE ROOTS, NOT THE BRANCHES." },
+    { phonetic: "> \"Ngäl-öm... käläw-öng...\"", english: "THE SHAMAN HAS NO NAME. ONLY DIRECTION." },
+    { phonetic: "> \"Nüm-ängäl... wäng-nüm...\"", english: "THE FIRE SPEAKS TO THOSE WHO STOP RUNNING." },
+    { phonetic: "> \"Käläw... käläw... käläw...\"", english: "CROSSING OVER IS EASIER THAN STAYING." },
+  ],
+  arc_04: [
+    { phonetic: "> \"Halmar-rish! Qutti-kash!\"", english: "THE LAST KING SENT NO ONE. YOU CAME ALONE." },
+    { phonetic: "> \"Shu-rriqan... hal-mar...\"", english: "ELAM DOES NOT MOURN. ELAM CATALOGUES ITS DEAD." },
+    { phonetic: "> \"HALMAR-RISH! QUUT-TISH!\"", english: "THIS IS THE CRY. THERE IS NO RESOLUTION." },
+    { phonetic: "> \"Hal... mar-rish... shu...\"", english: "WE WERE A LANGUAGE ISOLATE. WE DIED ALONE." },
+    { phonetic: "> \"Qutti-kash! Shu-rriqan!\"", english: "INSHUSHINAK RECEIVES ALL KINGS EQUALLY." },
+  ],
+};
+
+const BAR_CHARS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+const VIZ_COLS = 28;
 
 function InterrogationScreen({
   language,
@@ -625,128 +659,219 @@ function InterrogationScreen({
   agentConfig: AgentConfig;
   onBack: () => void;
 }) {
-  const [messages, setMessages] = useState<{ role: "user" | "entity"; text: string }[]>([
-    { role: "entity", text: agentConfig.firstMessage },
-  ]);
   const [input, setInput] = useState("");
-  const [isThinking, setIsThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [agentSpeaking, setAgentSpeaking] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [blinkOn, setBlinkOn] = useState(true);
+  const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 1));
+  const [subtitles, setSubtitles] = useState<{ phonetic: string; english: string }>({
+    phonetic: "> \"...\"",
+    english: agentConfig.firstMessage.toUpperCase(),
+  });
+  const [exchangeIdx, setExchangeIdx] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const ENTITY_RESPONSES: string[] = [
-    "The void hears your words, but the void does not answer directly...",
-    "You speak, and the stone vibrates. But vibration is not truth.",
-    "There are those who have asked before. They are ash now.",
-    "Your question is a door. The door is locked from the inside.",
-    "I have waited in this chamber longer than your civilization has existed.",
-    "What you call language, I call the memory of fire.",
-  ];
+  const pool = MOCK_EXCHANGES[language.id] ?? MOCK_EXCHANGES["arc_01"];
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const interval = setInterval(() => setBlinkOn((v) => !v), 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let vizInterval: ReturnType<typeof setInterval> | null = null;
+    if (agentSpeaking) {
+      vizInterval = setInterval(() => {
+        setVizBars(Array.from({ length: VIZ_COLS }, () => Math.floor(Math.random() * 8)));
+      }, 80);
+    } else {
+      setVizBars(Array.from({ length: VIZ_COLS }, (_, i) => i % 3 === 0 ? 2 : 1));
     }
-  }, [messages, isThinking]);
+    return () => { if (vizInterval) clearInterval(vizInterval); };
+  }, [agentSpeaking]);
+
+  function triggerResponse() {
+    setAgentSpeaking(true);
+    const exchange = pool[exchangeIdx % pool.length];
+    setExchangeIdx((i) => i + 1);
+    setTimeout(() => {
+      setSubtitles(exchange);
+      setTimeout(() => setAgentSpeaking(false), 2200 + Math.random() * 1000);
+    }, 900);
+  }
 
   function handleSend() {
-    if (!input.trim() || isThinking) return;
-    const userMsg = input.trim();
+    if ((!input.trim() && !isRecording) || agentSpeaking) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
-    setIsThinking(true);
-    setTimeout(() => {
-      // TODO: ElevenLabs Conversational AI Agent
-      // agent.sendMessage(userMsg) → streamed response with real-time TTS
-      const response = ENTITY_RESPONSES[Math.floor(Math.random() * ENTITY_RESPONSES.length)];
-      setMessages((prev) => [...prev, { role: "entity", text: response }]);
-      setIsThinking(false);
-    }, 1400 + Math.random() * 800);
+    setIsRecording(false);
+    setTimeout(triggerResponse, 200);
+  }
+
+  function handleMicDown() {
+    if (agentSpeaking) return;
+    setIsRecording(true);
+  }
+
+  function handleMicUp() {
+    if (!isRecording) return;
+    setIsRecording(false);
+    setTimeout(triggerResponse, 200);
   }
 
   return (
     <div className="screen-fade-in" style={{ height: "100vh", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
 
-      {/* Header */}
-      <div style={{ borderBottom: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "56px", flexShrink: 0 }}>
-        <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back</button>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 28px", gap: "16px" }}>
-          <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.12em" }}>BABELSOUNDS</span>
-          <span style={{ color: "#F0EAD625" }}>|</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>Step 3 of 3 — The Interrogation Room</span>
-          <span style={{ color: "#F0EAD625" }}>|</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
+      {/* ── Telemetry Header ── */}
+      <div style={{ borderBottom: "2px solid #F0EAD6", display: "flex", alignItems: "center", minHeight: "44px", flexShrink: 0, padding: "0" }}>
+        {/* Left: live status */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 20px", borderRight: "2px solid #F0EAD620" }}>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ LIVE ]</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>UPLINK ESTABLISHED</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", padding: "0 24px", gap: "12px" }}>
-          <div style={{ width: "8px", height: "8px", background: "#F0EAD6", borderRadius: "50%", animation: "pulse 2s infinite" }} />
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", letterSpacing: "0.08em" }}>ENTITY CONNECTED</span>
+        {/* Center: entity name */}
+        <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.8rem", color: "#a09880", letterSpacing: "0.1em", textTransform: "uppercase" }}>ENTITY:</span>
+          <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{language.title}</span>
+        </div>
+        {/* Right: terminate */}
+        <button
+          onClick={onBack}
+          style={{ ...outlineBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "0.85rem", padding: "0 20px", height: "44px", letterSpacing: "0.1em" }}
+        >
+          [ TERMINATE LINK ]
+        </button>
+      </div>
+
+      {/* ── Entity Visualizer ── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "20px 40px" }}>
+        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988050", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>
+          / / ACOUSTIC FREQUENCY MONITOR / /
+        </div>
+        {/* Main visualizer bars */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(80px, 20vh, 160px)" }}>
+          {vizBars.map((h, i) => (
+            <div
+              key={i}
+              style={{
+                width: "12px",
+                background: agentSpeaking ? "#F0EAD6" : "#F0EAD630",
+                height: `${(h / 7) * 100}%`,
+                minHeight: "4px",
+                transition: agentSpeaking ? "none" : "height 0.3s, background 0.4s",
+              }}
+            />
+          ))}
+        </div>
+        {/* Bar chart text version below — glitchy ASCII */}
+        <div style={{
+          fontFamily: "'VT323', monospace",
+          fontSize: "clamp(0.9rem, 1.8vw, 1.2rem)",
+          color: agentSpeaking ? "#F0EAD690" : "#F0EAD625",
+          letterSpacing: "0.02em",
+          transition: "color 0.3s",
+          userSelect: "none",
+          textAlign: "center",
+        }}>
+          {vizBars.map((h) => BAR_CHARS[Math.min(h, 7)]).join("")}
+        </div>
+        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988040", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "8px" }}>
+          {agentSpeaking ? "— ENTITY TRANSMITTING —" : "— IDLE — AWAITING INPUT —"}
         </div>
       </div>
 
-      {/* Agent config strip */}
-      <div style={{ borderBottom: "1px solid #F0EAD615", padding: "8px 28px", display: "flex", gap: "24px", background: "#0a0a0a", flexShrink: 0 }}>
-        <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          Voice: <span style={{ color: "#a09880" }}>{agentConfig.vocalBlueprint.slice(0, 60)}...</span>
-        </span>
+      {/* ── Subtitle Engine ── */}
+      <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD618", borderBottom: "1px solid #F0EAD618", padding: "18px 40px 20px", background: "#0a0a0a", minHeight: "110px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
+        {/* Phonetic gibberish — small, muted */}
+        <div style={{
+          fontFamily: "'VT323', monospace",
+          fontSize: "1.05rem",
+          color: "#F0EAD650",
+          letterSpacing: "0.06em",
+          opacity: agentSpeaking ? 1 : 0.6,
+          transition: "opacity 0.4s",
+        }}>
+          {subtitles.phonetic}
+        </div>
+        {/* English translation — large, prominent */}
+        <div style={{
+          fontFamily: "'Rubik Mono One', monospace",
+          fontSize: "clamp(1rem, 2.5vw, 1.45rem)",
+          color: "#F0EAD6",
+          letterSpacing: "0.06em",
+          lineHeight: 1.25,
+          opacity: agentSpeaking ? 1 : 0.75,
+          transition: "opacity 0.4s",
+        }}>
+          {subtitles.english}
+        </div>
       </div>
 
-      {/* Chat area */}
-      <div ref={scrollRef} className="panel-scroll" style={{ flex: 1, padding: "32px 40px", display: "flex", flexDirection: "column", gap: "20px" }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", gap: "4px" }}>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
-              {msg.role === "entity" ? language.title : "You"}
-            </div>
-            <div style={{
-              maxWidth: "70%",
-              border: `2px solid ${msg.role === "entity" ? "#F0EAD6" : "#F0EAD650"}`,
-              padding: "14px 18px",
-              background: msg.role === "entity" ? "#0d0d0d" : "transparent",
-              fontFamily: "'VT323', monospace",
-              fontSize: "1.2rem",
-              lineHeight: "1.5",
-              color: msg.role === "entity" ? "#F0EAD6" : "#a09880",
-              letterSpacing: "0.02em",
-            }}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isThinking && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>{language.title}</div>
-            <div style={{ border: "2px solid #F0EAD630", padding: "14px 18px", background: "#0d0d0d", fontFamily: "'VT323', monospace", fontSize: "1.2rem", color: "#F0EAD640", letterSpacing: "0.08em" }}>
-              . . .
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input row */}
-      <div style={{ borderTop: "4px solid #F0EAD6", display: "flex", flexShrink: 0 }}>
+      {/* ── User Input Deck ── */}
+      <div style={{ flexShrink: 0, borderTop: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "64px" }}>
+        {/* Hold to speak */}
+        <button
+          onMouseDown={handleMicDown}
+          onMouseUp={handleMicUp}
+          onTouchStart={handleMicDown}
+          onTouchEnd={handleMicUp}
+          disabled={agentSpeaking}
+          style={{
+            background: isRecording ? "#F0EAD6" : "#121212",
+            color: isRecording ? "#121212" : "#F0EAD6",
+            border: "none",
+            borderRight: "2px solid #F0EAD6",
+            fontFamily: "'VT323', monospace",
+            fontSize: "1rem",
+            letterSpacing: "0.1em",
+            padding: "0 24px",
+            cursor: agentSpeaking ? "not-allowed" : "pointer",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            opacity: agentSpeaking ? 0.4 : 1,
+            transition: "background 0.08s, color 0.08s",
+          }}
+        >
+          {isRecording ? "[ ● RECORDING ]" : "[ HOLD TO SPEAK ]"}
+        </button>
+        {/* Text input */}
         <input
+          ref={inputRef}
           type="text"
-          placeholder="Speak into the void..."
+          placeholder=">_ DIRECT TEXT OVERRIDE..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
-          disabled={isThinking}
+          disabled={agentSpeaking || isRecording}
           style={{
             flex: 1,
             background: "transparent",
             border: "none",
             color: "#F0EAD6",
             fontFamily: "'VT323', monospace",
-            fontSize: "1.3rem",
-            padding: "18px 28px",
+            fontSize: "1.2rem",
+            padding: "0 20px",
             outline: "none",
             letterSpacing: "0.04em",
+            opacity: agentSpeaking || isRecording ? 0.4 : 1,
           }}
         />
+        {/* Send */}
         <button
           onClick={handleSend}
-          disabled={!input.trim() || isThinking}
-          style={{ ...solidBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "1.2rem", padding: "0 32px", opacity: !input.trim() || isThinking ? 0.45 : 1 }}
+          disabled={(!input.trim() && !isRecording) || agentSpeaking}
+          style={{
+            ...solidBtn,
+            border: "none",
+            borderLeft: "2px solid #F0EAD6",
+            fontSize: "1rem",
+            padding: "0 28px",
+            letterSpacing: "0.1em",
+            opacity: ((!input.trim() && !isRecording) || agentSpeaking) ? 0.4 : 1,
+          }}
         >
-          {isThinking ? "..." : "Transmit →"}
+          [ SEND ]
         </button>
       </div>
 

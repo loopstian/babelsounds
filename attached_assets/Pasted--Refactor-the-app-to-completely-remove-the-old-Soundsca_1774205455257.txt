@@ -1,0 +1,33 @@
+"Refactor the app to completely remove the old 'Soundscape/Timeline' and replace it with **Screen 3: The Interrogation Terminal**, a real-time conversational UI for the ElevenLabs Agent.
+
+**1. Create the 'Interrogation' Screen Layout:**
+- Render this screen when `currentScreen === 'interrogation'`.
+- Use a strict, fixed-height, full-screen flex column layout (`h-screen flex flex-col overflow-hidden`).
+- Keep the brutalist #121212 background and #F0EAD6 elements. 
+
+**2. Top Bar (Telemetry Header):**
+- **Left:** A blinking status indicator: `[ ● LIVE ] UPLINK ESTABLISHED`.
+- **Center:** The name of the connected entity (passed from Screen 1/2): `ENTITY: [selectedLanguage.name]`.
+- **Right:** A harsh outlined button: `[ TERMINATE LINK ]` (Transitions `currentScreen` back to 'archives').
+
+**3. Center Stage (The Entity Visualizer):**
+- A large, vertically and horizontally centered flex container (`flex-1`).
+- Inside, create a massive, CSS-based or ASCII-based 'Audio Visualizer' placeholder. 
+- *Visual Vibe:* It should look like a raw, glitchy frequency monitor. Use a cluster of blocky brackets or lines (e.g., `||||||||||||`). 
+- **Mock State:** Add a `agentSpeaking` boolean state. When true, make the visualizer pulse or change opacity rapidly to simulate talking.
+
+**4. The Subtitle Engine (Lower-Mid Section):**
+- Below the visualizer, create a dedicated 'Cinematic Subtitles' block. This is where the translation of the dead language appears.
+- **Top Line (The Phonetic Gibberish):** A small, muted text line (`text-[#F0EAD6]/50 VT323`) showing what the entity is actually saying: `> "Xooc'haa... Tla-quoo... Maa'ya'tl."`
+- **Bottom Line (The English Translation):** A much larger, prominent text block. Use a slightly different color if possible, like a muted amber/gold (e.g., `text-amber-200/90`) to mimic classic film subtitles, or stick to the cream #F0EAD6 but make it uppercase and bold. `> "I HAVE BEEN AWAKE SINCE THE STONE BLED..."`
+
+**5. User Input Deck (Bottom Section):**
+- A fixed bottom panel with a thick top border (`border-t-2 border-[#F0EAD6] p-4`).
+- **Layout:** A horizontal flexbox.
+- **The Mic:** A large, solid block button: `[ HOLD TO SPEAK ]` (Mock an `isRecording` state that turns the button inverted when held/clicked).
+- **The Text Fallback:** A flexible text input next to the mic: `>_ DIRECT TEXT OVERRIDE...` and a `[ SEND ]` button.
+
+**6. State Simulation (Mock Chat Cycle):**
+- When the user clicks `[ SEND ]` or releases the mic, mock a 1-second delay, then set `agentSpeaking` to `true`, and update the Subtitles with a mock response (passed from Screen 2's `firstMessage`).
+
+**Please ensure the entire screen feels tense, minimal, and entirely focused on the live 'conversation' and the subtitles.**"
