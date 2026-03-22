@@ -22,7 +22,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
 │   ├── api-server/         # Express API server
-│   └── babelsounds/        # Babelsounds retro-brutalist audio synthesis tool (React SPA, no backend)
+│   └── babelsounds/        # Babelsounds retro-brutalist AI entity builder (React SPA, no backend)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks

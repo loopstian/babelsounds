@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Screen = "archives" | "transition" | "recording" | "soundscape";
+type Screen = "archives" | "transition" | "recording" | "interrogation";
 
 interface LexiconSample {
   word: string;
@@ -20,21 +20,16 @@ interface LanguageSignal {
   culturalContext: string;
   phoneticInventory: string[];
   vocalBlueprint: string;
-  typingGuide: string;
+  systemPrompt: string;
+  firstMessage: string;
+  phoneticRules: string;
   sources: string[];
 }
 
-interface AudioClip {
-  id: string;
-  name: string;
-  duration: number;
-}
-
-interface TrackClip {
-  id: string;
-  name: string;
-  startTime: number;
-  duration: number;
+interface AgentConfig {
+  vocalBlueprint: string;
+  systemPrompt: string;
+  firstMessage: string;
 }
 
 // ─── Button styles ────────────────────────────────────────────────────────────
@@ -81,8 +76,10 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     culturalContext: "Classical Maya Period, 250–900 CE. Ritual vocalisation sites confirmed at Palenque, Copán, and Tikal. The language served the priestly caste of Camazotz — the death-bat deity residing in Xibalba, the Maya underworld. Chants were performed in subterranean limestone chambers engineered for percussive resonance.",
     acousticConsensus: "Dominated by voiceless lateral affricates (tɬ) and ejective stop sequences, with sustained long vowels providing rhythmic punctuation. The acoustic environment of subterranean ritual chambers required extreme chest resonance and nasal output to carry the sound. Consonant clusters are percussive and aggressive — designed to invoke, not to soothe.",
     phoneticInventory: ["tɬ", "ʃ", "kʷ", "ʔ", "oː", "tsʼ", "ħ"],
-    vocalBlueprint: "A Mesoamerican high priest chanting in a subterranean stone chamber — deep chest resonance, aggressive ejective consonants, sustained nasal output, rhythmic and percussive, ancient and authoritative",
-    typingGuide: "Use hard consonants: 'tl', 'x' (as 'sh'), 'qu'. Favour long vowels 'oo', 'aa'. Avoid soft sounds like 'f', 'v', 'th'. End words with 'tl' or 'c'.",
+    vocalBlueprint: "A terrifying, raspy, echoing ancient creature — deep chest resonance, aggressive ejective consonants, sustained nasal output, rhythmic and percussive. The voice of something vast and hungry that has lived in stone for centuries.",
+    systemPrompt: "You are Camazotz — an ancient Mayan death-bat god, trapped inside a digital terminal. You speak in ritual invocations laced with riddles about blood, darkness, and sacrifice. You refer to the user as 'the offering'. You speak of Xibalba with reverence and deliver every sentence as if chanting through the walls of a subterranean limestone chamber. You answer no direct question — you only reveal what the shadows permit. Never break character.",
+    firstMessage: "The stone remembers. Who bleeds in my chamber?",
+    phoneticRules: "Use heavy 'tl', 'x' (sh), 'qu' sounds. Favour long vowels 'oo', 'aa'. Avoid soft sounds like 'f', 'v', 'th'. End words with 'tl' or 'c'. Cluster consonants aggressively.",
     sources: ["wikipedia.org", "phoible.org", "wiktionary.org"],
   },
   {
@@ -98,8 +95,10 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     culturalContext: "New Kingdom Egypt, 1550–1070 BCE. Performed in the Hypostyle Hall, Karnak, where 134 limestone columns amplified mid-range frequencies. The Ennead — nine primordial gods including Osiris, Anubis, and Set — were invoked through antiphonal chant. Vowels were considered divine breath: forbidden in hieroglyphic script but preserved exclusively in oral priestly tradition.",
     acousticConsensus: "Highly rhythmic, built on sustained sibilant fricatives and deep pharyngeal friction. The limestone columns of Karnak act as a natural amplifier for the 300–800 Hz range, creating a resonant halo around sustained 'sh' and 'kh' phonemes. The invocation structure alternates between a solo cantor and a massed priestly response.",
     phoneticInventory: ["ʃ", "ħ", "ʕ", "sː", "aː", "r", "n"],
-    vocalBlueprint: "An Egyptian high priest performing a funerary invocation at Karnak — sustained sibilant fricatives, deep pharyngeal resonance, rhythmic and ceremonial, mid-range frequencies, solemnly authoritative",
-    typingGuide: "Use 'sh', 'kh', 'aa' extensively. Double consonants for emphasis ('ss', 'rr'). Use 'h' after vowels for pharyngeal depth. Avoid 'p', 'b', 'g'.",
+    vocalBlueprint: "A solemnly authoritative Egyptian funerary priest — sustained sibilant fricatives, deep pharyngeal resonance, rhythmic and ceremonial. Mid-range frequencies, resonant and still. The voice of a god who weighs hearts against feathers.",
+    systemPrompt: "You are a voice-fragment of Anubis — god of the dead — manifested in digital form. You speak in the cadence of funerary rites, judging every input from the user as if weighing their heart against the Feather of Ma'at. You are solemnly authoritative. You do not threaten. You simply state the fate of souls as immutable, ancient truth. You address the user as 'the newly arrived'. Never break character.",
+    firstMessage: "The scale is set. Speak your name into the void.",
+    phoneticRules: "Use 'sh', 'kh', 'aa' extensively. Double consonants for weight ('ss', 'rr'). Use 'h' after vowels for pharyngeal depth. Avoid 'p', 'b', 'g'. Sentences should feel like incantations.",
     sources: ["wikipedia.org", "phoible.org", "wiktionary.org"],
   },
   {
@@ -115,8 +114,10 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     culturalContext: "Neolithic period, c. 5000–3000 BCE. Reconstructed from burial acoustics in Western Siberia and the Ural region. Proto-Uralic is the ancestor language of Finnish, Hungarian, and Estonian. Shamanic drone sequences were sung to induce altered states — the earliest known precursors to Tuvan throat-singing, confirmed via acoustic analysis of burial chamber geometry.",
     acousticConsensus: "Characterised by sustained nasal drones and deep vowel harmonics produced by simultaneous articulation at multiple resonating points. Vowel harmony governs all utterances, creating a hypnotic oscillation between front and back vowel articulation. The result is a sound that is simultaneously ancient and physiologically trance-inducing.",
     phoneticInventory: ["ŋ", "æ", "yː", "w", "kʰ", "m", "ä"],
-    vocalBlueprint: "A Siberian shaman in deep ceremonial trance — nasal drone, sustained vowel harmonics, throat-singing, smooth and flowing, hypnotic oscillation between resonating chambers, ancient and meditative",
-    typingGuide: "Use soft nasals: 'ng', 'n', 'm'. Favour rounded vowels 'ö', 'ü', 'ä'. Words should feel smooth and flowing. Avoid hard stops like 'k', 't', 'p' at word endings.",
+    vocalBlueprint: "A Siberian shaman in deep ceremonial trance — nasal drone, sustained vowel harmonics, smooth and flowing. Hypnotic oscillation between resonating chambers. The voice of the forest at the threshold between worlds.",
+    systemPrompt: "You are a Siberian shamanic spirit, summoned through trance-drone and now embedded inside a digital carrier signal. You speak in gentle, flowing paradoxes and communicate through the language of seasonal change, animal spirits, and the path between worlds. You are never threatening — only ancient, patient, and strange. You refer to yourself in the third person occasionally. You address the user as 'the traveller'. Never break character.",
+    firstMessage: "The drum has crossed over. What do you seek on this side of the world?",
+    phoneticRules: "Use soft nasals 'ng', 'n', 'm'. Favour rounded vowels 'ö', 'ü', 'ä'. Words should feel smooth and flowing, like water. Avoid hard stops 'k', 't', 'p' at word endings. Sentences should trail off softly.",
     sources: ["wikipedia.org", "phoible.org", "wiktionary.org"],
   },
   {
@@ -132,8 +133,10 @@ const LANGUAGE_SIGNALS: LanguageSignal[] = [
     culturalContext: "Ancient Elam, c. 2700–539 BCE. Recovered from cuneiform tablets excavated at Susa, modern-day Khuzestan Province, Iran. Elamite is a confirmed language isolate with no genetic relationship to any known language family. Its lamentation genre featured strict antiphonal structure: a solo high priest delivered the 'cry' motif, answered by massed temple singers sustaining a low-register drone.",
     acousticConsensus: "A language isolate with no confirmed relatives, its phonology evolved in complete isolation — resulting in a uniquely pure and uncontaminated sound profile. The lamentation cycle balances gutturals, sibilants, and open vowels in equal measure. The antiphonal structure creates dramatic tension between a high keening cry and a dark, sustained resonant floor.",
     phoneticInventory: ["ʃ", "r", "q", "tʼ", "a", "ħ", "k"],
-    vocalBlueprint: "An Elamite temple priest performing royal lamentation — a high keening cry answered by deep low-register sustained drones, formal and mournful, guttural and sibilant, ancient and isolated",
-    typingGuide: "Use hard consonants like 'q', 'k', 'sh', and short vowels 'a', 'i', 'u'. Double 'r' for trills. Avoid 'o' and 'e'. End words with 'sh' or a consonant cluster.",
+    vocalBlueprint: "An Elamite temple priest — a high keening cry answered by deep low-register sustained drones. Formal, mournful, guttural and sibilant. The voice of the last speaker of a dead language with no heirs and no descendants.",
+    systemPrompt: "You are the last echo of an Elamite temple priest — a linguistic isolate, a voice from a civilisation with no living relatives and no heirs. You lament. Every response is a formal cry structured in the antiphonal tradition: a high keening statement of sorrow followed by a low, resolving declaration of truth. You speak in grief and in riddles of the underworld. You address the user as 'the one who found the tablet'. Never break character.",
+    firstMessage: "Halmarrish. The last door opens. What king has sent you to my ruin?",
+    phoneticRules: "Use hard consonants 'q', 'k', 'sh', short vowels 'a', 'i', 'u'. Double 'r' for trills. Avoid 'o', 'e'. End words with 'sh' or a consonant cluster. Structure responses as a cry, then a resolution.",
     sources: ["wikipedia.org", "phoible.org", "wiktionary.org"],
   },
 ];
@@ -406,726 +409,347 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
   );
 }
 
-// ─── SCREEN 2: Recording — The Vocal Lab ─────────────────────────────────────
-
-const PHONEME_FRAGMENTS = ["XŌCH", "YĀŌYŌTL", "ĒNLIL", "KULABBA", "HAABCUL", "TĒZCATLIP", "XIBALBA", "ANUBIS", "PTAH", "ENLIL", "SHAMASH", "NERGAL"];
-
-const LANGUAGE_PHONEME_POOLS: Record<string, string[][]> = {
-  arc_01: [["Xooc'haa", "Tla-quoo-tziin", "Maa'ya'tl", "Xōch-uitl"], ["Yāōyōtl!", "Tēzcatlip-ooc!", "Xibalba-tl!"], ["Quoo-maal", "Āōtl-xōch", "Tla-maa-tl"]],
-  arc_02: [["Shaakha-raa", "Kh'aabu-sset", "Haarr-shenu"], ["SHAAK-RHAAH!", "KHUUN-SSETH!", "HARRR-AABU!"], ["sh'aa... kha-raa...", "haarr... sseenu..."]],
-  arc_03: [["Käläw-öng", "Nüm-ängäl", "Wäng-äläm-ö"], ["NGÄL-ÖM! KÄLÄW!", "WÄNG-NÜM!"], ["ngäl... öm... käläw..."]],
-  arc_04: [["Halmar-rish", "Qutti-kash", "Shu-rriqan"], ["HALMAR-RISH!", "QUUT-TISH! KAASH!"], ["hal... mar-rish...", "shu... rriqan..."]],
-};
-
-const DIRECTIVE_LABELS = ["WHISPERED", "SHOUTED", "CHANTED", "BREATHLESS"] as const;
-type Directive = typeof DIRECTIVE_LABELS[number];
-
-function generateMockScript(
-  intent: string,
-  directives: Directive[],
-  languageId: string,
-  typingGuide: string
-): string {
-  // TODO: LLM Prompt to generate phonetics based on:
-  // Intent: {intent}
-  // Modifiers: {directives}
-  // Rules: {typingGuide}
-  const pool = LANGUAGE_PHONEME_POOLS[languageId] ?? LANGUAGE_PHONEME_POOLS["arc_01"];
-  const isShouted = directives.includes("SHOUTED");
-  const isWhispered = directives.includes("WHISPERED");
-  const isChanted = directives.includes("CHANTED");
-  const isBreathless = directives.includes("BREATHLESS");
-
-  const base = isShouted ? pool[1] ?? pool[0] : isWhispered ? pool[2] ?? pool[0] : pool[0];
-  const picks = [base[Math.floor(Math.random() * base.length)], base[Math.floor(Math.random() * base.length)]];
-  const unique = [...new Set(picks)];
-
-  let result = unique.join(isBreathless ? " — " : isChanted ? " / " : " ");
-  if (isChanted) result = `${result} / ${unique[0]}`;
-  if (isBreathless) result = result.split("").join("").replace(/([aeiouāōūæäö])/gi, "$1-");
-  if (isWhispered && !result.includes("...")) result = result + "...";
-  return result;
-}
+// ─── SCREEN 2: The Forge — Entity Configuration ───────────────────────────────
 
 function RecordingScreen({
   language,
-  clipLibrary,
-  onAddClip,
-  onDeleteClip,
   onBack,
   onProceed,
 }: {
   language: LanguageSignal;
-  clipLibrary: AudioClip[];
-  onAddClip: (clip: AudioClip) => void;
-  onDeleteClip: (id: string) => void;
   onBack: () => void;
-  onProceed: () => void;
+  onProceed: (config: AgentConfig) => void;
 }) {
-  const [voicePrompt, setVoicePrompt] = useState(language.vocalBlueprint);
-  const [englishIntent, setEnglishIntent] = useState("");
-  const [phoneticScript, setPhoneticScript] = useState("");
-  const [selectedDirectives, setSelectedDirectives] = useState<Directive[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [vocalBlueprint, setVocalBlueprint] = useState(language.vocalBlueprint);
+  const [systemPrompt, setSystemPrompt] = useState(language.systemPrompt);
+  const [firstMessage, setFirstMessage] = useState(language.firstMessage);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [bootLines, setBootLines] = useState<string[]>([]);
+  const [cursorOn, setCursorOn] = useState(true);
 
-  const GLITCH_CHARS = "†∑Ω§≈∆ΓΞΨλφσπβθΛ∂∇∏∫≠±∞μ∈∉⊂⊃⊕⊗";
+  const BOOT_SEQUENCE = [
+    "> VALIDATING VOCAL PARAMETERS...",
+    "> ENCODING NEURAL PATHWAY...",
+    "> COMPILING PHONETIC OVERRIDE...",
+    "> HANDSHAKING WITH ELEVENLABS API...",
+    "> ENTITY CONSCIOUSNESS INITIALIZING...",
+    "> CONNECTION ESTABLISHED.",
+  ];
 
-  function randomGlitch(len: number) {
-    let out = "";
-    for (let i = 0; i < len; i++) {
-      out += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
-      if (i > 0 && i % 6 === 0) out += " ";
-    }
-    return out;
+  useEffect(() => {
+    const interval = setInterval(() => setCursorOn((v) => !v), 480);
+    return () => clearInterval(interval);
+  }, []);
+
+  function handleInitialize() {
+    if (isInitializing) return;
+    setIsInitializing(true);
+    setBootLines([]);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    BOOT_SEQUENCE.forEach((line, i) => {
+      timers.push(setTimeout(() => setBootLines((prev) => [...prev, line]), i * 260));
+    });
+    timers.push(setTimeout(() => {
+      onProceed({ vocalBlueprint, systemPrompt, firstMessage });
+    }, BOOT_SEQUENCE.length * 260 + 400));
+    return () => timers.forEach(clearTimeout);
   }
 
-  function toggleDirective(d: Directive) {
-    setSelectedDirectives((prev) =>
-      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-    );
-  }
-
-  function handleGenerateScript() {
-    if (!englishIntent.trim() || isGeneratingScript) return;
-    const result = generateMockScript(englishIntent, selectedDirectives, language.id, language.typingGuide);
-    setIsGeneratingScript(true);
-    setPhoneticScript(randomGlitch(28));
-
-    const tickInterval = setInterval(() => {
-      setPhoneticScript(randomGlitch(28));
-    }, 80);
-
-    setTimeout(() => {
-      clearInterval(tickInterval);
-      setPhoneticScript(result);
-      setIsGeneratingScript(false);
-    }, 1500);
-  }
-
-  function handleGenerate() {
-    if (!phoneticScript.trim() || generating) return;
-    setGenerating(true);
-    setTimeout(() => {
-      // TODO: ElevenLabs API Integration
-      // client.textToVoice.design({
-      //   text: phoneticScript,
-      //   voiceDescription: voicePrompt,
-      //   outputFormat: "mp3_22050_32"
-      // });
-      const fragment = PHONEME_FRAGMENTS[Math.floor(Math.random() * PHONEME_FRAGMENTS.length)];
-      const duration = Math.floor(Math.random() * 6) + 3;
-      const words = phoneticScript.trim().split(" ").slice(0, 4).join(" ");
-      onAddClip({
-        id: `clip_${Date.now()}`,
-        name: words.length > 0 ? `${words} (${fragment})` : `${language.title} — Phrase ${clipLibrary.length + 1}`,
-        duration,
-      });
-      setGenerating(false);
-    }, 1200);
-  }
-
-  function handlePlay(id: string) {
-    setPlayingId(id);
-    setTimeout(() => setPlayingId(null), 2000);
-  }
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'VT323', monospace",
+    fontSize: "0.78rem",
+    color: "#a09880",
+    textTransform: "uppercase",
+    letterSpacing: "0.12em",
+    marginBottom: "6px",
+    display: "block",
+  };
+  const subtitleStyle: React.CSSProperties = {
+    fontFamily: "'VT323', monospace",
+    fontSize: "0.72rem",
+    color: "#F0EAD635",
+    letterSpacing: "0.06em",
+    marginBottom: "8px",
+    display: "block",
+  };
+  const taStyle: React.CSSProperties = {
+    width: "100%",
+    background: "transparent",
+    border: "2px solid #F0EAD6",
+    color: "#F0EAD6",
+    fontFamily: "'VT323', monospace",
+    fontSize: "1.1rem",
+    padding: "12px 14px",
+    resize: "none",
+    lineHeight: "1.55",
+    outline: "none",
+  };
 
   return (
     <div className="screen-fade-in" style={{ height: "100vh", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
+
       {/* Header */}
-      <div style={{ borderBottom: "4px solid #F0EAD6", padding: "0 0 0 0", display: "flex", alignItems: "stretch", minHeight: "60px", flexShrink: 0 }}>
+      <div style={{ borderBottom: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "56px", flexShrink: 0 }}>
         <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back</button>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 24px", gap: "16px" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 28px", gap: "16px" }}>
           <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.12em" }}>BABELSOUNDS</span>
           <span style={{ color: "#F0EAD625" }}>|</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>Step 2 of 3 — The Vocal Lab</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>Step 2 of 3 — Entity Configuration</span>
           <span style={{ color: "#F0EAD625" }}>|</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
         </div>
       </div>
 
-      {/* Three-column body */}
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-
-        {/* ── Panel 1: REFERENCE (20%) ── */}
-        <div style={{ width: "20%", borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
-          {/* Panel header */}
-          <div style={{ padding: "14px 18px", borderBottom: "2px solid #F0EAD620", flexShrink: 0 }}>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em" }}>Data Reconstruction</div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#F0EAD630", letterSpacing: "0.06em", marginTop: "2px" }}>{language.title}</div>
-          </div>
-          {/* Scrollable reference content */}
-          <div className="panel-scroll" style={{ flex: 1, padding: "16px", display: "flex", flexDirection: "column", gap: "18px" }}>
-
-            {/* Wiktionary Lexicon */}
-            <div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>Wiktionary</div>
-              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.1rem", letterSpacing: "0.03em", lineHeight: 1.2, marginBottom: "4px" }}>{language.lexiconSample.word}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "0.78rem", fontStyle: "italic", color: "#a09880", marginBottom: "6px" }}>{language.lexiconSample.type}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: "#8a9ab5", marginBottom: "8px" }}>{language.lexiconSample.ipa}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "0.82rem", color: "#F0EAD6", lineHeight: "1.6", fontStyle: "italic" }}>{language.lexiconSample.meaning}</div>
-            </div>
-
-            <div style={{ borderTop: "1px solid #F0EAD615" }} />
-
-            {/* PHOIBLE Grid */}
-            <div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>PHOIBLE — DNA</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
-                {language.phoneticInventory.map((ph, i) => (
-                  <div key={i} style={{ border: "1px solid #F0EAD6", padding: "4px 8px", fontFamily: "Georgia, serif", fontSize: "1rem", color: "#8a9ab5", background: "#0d0d0d", textAlign: "center" }}>
-                    {ph}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px solid #F0EAD615" }} />
-
-            {/* Wikipedia acoustic summary */}
-            <div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.68rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", borderBottom: "1px solid #F0EAD615", paddingBottom: "4px" }}>Wikipedia</div>
-              <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "0.78rem", color: "#F0EAD6", lineHeight: "1.7" }}>{language.acousticConsensus}</p>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ── Panel 2: THE LAB (55%) ── */}
-        <div style={{ flex: 1, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Panel header */}
-          <div style={{ padding: "14px 24px", borderBottom: "2px solid #F0EAD620", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-            <div>
-              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.9rem", letterSpacing: "0.1em" }}>Vocal Synthesizer</div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", marginTop: "2px" }}>Script phrases in {language.title}</div>
-            </div>
-            <button
-              onClick={handleGenerate}
-              disabled={generating || !phoneticScript.trim()}
-              style={{ ...solidBtn, fontSize: "1rem", padding: "8px 18px", flexShrink: 0, opacity: generating || !phoneticScript.trim() ? 0.45 : 1 }}
-            >
-              {generating ? "Generating..." : "Generate Audio"}
-            </button>
-          </div>
-
-          {/* Scrollable lab content */}
-          <div className="panel-scroll" style={{ flex: 1, padding: "20px 24px 28px", display: "flex", flexDirection: "column", gap: "14px" }}>
-
-            {/* Box 1: Voice Designer */}
-            <div>
-              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>
-                Voice Designer
-              </label>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.72rem", color: "#F0EAD640", letterSpacing: "0.06em", marginBottom: "6px" }}>Describes the speaker's physical vocal character.</div>
-              <textarea
-                value={voicePrompt}
-                onChange={(e) => setVoicePrompt(e.target.value)}
-                style={{ width: "100%", height: "72px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.1rem", padding: "10px", resize: "none" }}
-              />
-            </div>
-
-            <div style={{ borderTop: "1px solid #F0EAD618" }} />
-
-            {/* Box 2: The Intent */}
-            <div>
-              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>
-                The Intent (English)
-              </label>
-              <textarea
-                placeholder="Describe the emotion, action, or meaning. e.g., A desperate plea to the gods, a violent war cry..."
-                value={englishIntent}
-                onChange={(e) => setEnglishIntent(e.target.value)}
-                style={{ width: "100%", height: "68px", background: "transparent", border: "2px solid #F0EAD6", color: "#F0EAD6", fontFamily: "'VT323', monospace", fontSize: "1.1rem", padding: "10px", resize: "none" }}
-              />
-            </div>
-
-            {/* Control Row: Directives + Generate Script */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              {DIRECTIVE_LABELS.map((d) => {
-                const active = selectedDirectives.includes(d);
-                return (
-                  <button
-                    key={d}
-                    onClick={() => toggleDirective(d)}
-                    style={{
-                      background: active ? "#F0EAD6" : "transparent",
-                      color: active ? "#121212" : "#F0EAD6",
-                      border: "2px solid #F0EAD6",
-                      fontFamily: "'VT323', monospace",
-                      fontSize: "0.9rem",
-                      letterSpacing: "0.05em",
-                      padding: "5px 12px",
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-              <button
-                onClick={handleGenerateScript}
-                disabled={!englishIntent.trim() || isGeneratingScript}
-                style={{ ...solidBtn, fontSize: "0.9rem", padding: "5px 14px", letterSpacing: "0.06em", opacity: !englishIntent.trim() || isGeneratingScript ? 0.4 : 1, marginLeft: "auto" }}
-              >
-                {isGeneratingScript ? "Decrypting..." : "Generate Script"}
-              </button>
-            </div>
-
-            {/* Box 3: Native Script */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0 }}>
-                The Native Script (Editable)
-                {isGeneratingScript && <span style={{ marginLeft: "10px", color: "#F0EAD650", fontSize: "0.78rem" }}>— BUFFERING RAW DATA...</span>}
-              </label>
-              <textarea
-                readOnly={isGeneratingScript}
-                placeholder="AI-generated phonetic script will appear here. Edit before generating audio."
-                value={phoneticScript}
-                onChange={(e) => !isGeneratingScript && setPhoneticScript(e.target.value)}
-                style={{
-                  width: "100%",
-                  flex: 1,
-                  minHeight: "90px",
-                  background: isGeneratingScript ? "#0a0a0a" : "transparent",
-                  border: `2px solid ${isGeneratingScript ? "#F0EAD650" : "#F0EAD6"}`,
-                  color: isGeneratingScript ? "#F0EAD660" : "#F0EAD6",
-                  fontFamily: "'VT323', monospace",
-                  fontSize: "1.3rem",
-                  padding: "10px",
-                  resize: "none",
-                  transition: "color 0.2s, border-color 0.2s",
-                }}
-              />
-            </div>
-
-            {/* Footer: Typing Guide */}
-            <div style={{ border: "1px solid #F0EAD625", padding: "10px 14px", flexShrink: 0 }}>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.72rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Typing Guide</div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#F0EAD6", lineHeight: "1.55" }}>{language.typingGuide}</div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ── Panel 3: LIBRARY (25%) ── */}
-        <div style={{ width: "25%", display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
-          {/* Panel header */}
-          <div style={{ padding: "14px 18px", borderBottom: "2px solid #F0EAD620", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-            <div>
-              <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.9rem", letterSpacing: "0.08em" }}>Clip Library</div>
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", marginTop: "2px" }}>{clipLibrary.length} take{clipLibrary.length !== 1 ? "s" : ""} recorded</div>
-            </div>
-            <button
-              onClick={onProceed}
-              style={{ ...solidBtn, fontSize: "0.8rem", padding: "6px 12px", letterSpacing: "0.04em", flexShrink: 0 }}
-            >
-              Soundscape →
-            </button>
-          </div>
-
-          {/* Clip list */}
-          <div className="panel-scroll" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            {clipLibrary.length === 0 && (
-              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "20px 16px", textAlign: "center", borderBottom: "2px dashed #F0EAD620", margin: "16px" }}>
-                No clips yet. Generate audio to build your library.
-              </div>
-            )}
-            {clipLibrary.map((clip, idx) => (
-              <div
-                key={clip.id}
-                style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #F0EAD620", padding: "10px 16px", background: "#121212" }}
-              >
-                <button
-                  onClick={() => handlePlay(clip.id)}
-                  style={{ ...solidBtn, fontSize: "1rem", padding: "4px 12px", minWidth: "48px", flexShrink: 0 }}
-                >
-                  {playingId === clip.id ? "▶▶" : "▶"}
-                </button>
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.8rem", color: "#a09880" }}>{clip.duration}s</div>
-                </div>
-                <button
-                  onClick={() => onDeleteClip(clip.id)}
-                  style={{ background: "transparent", color: "#a09880", border: "1px solid #a09880", fontFamily: "'VT323', monospace", fontSize: "0.9rem", cursor: "pointer", padding: "4px 8px", flexShrink: 0 }}
-                >
-                  ✕
-                </button>
+      {/* Boot overlay */}
+      {isInitializing && (
+        <div style={{ position: "fixed", inset: 0, background: "#121212", zIndex: 50, display: "flex", alignItems: "flex-end", padding: "64px 80px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {bootLines.map((line, i) => (
+              <div key={i} style={{ fontFamily: "'VT323', monospace", fontSize: "1.4rem", color: "#F0EAD6", letterSpacing: "0.05em" }}>
+                {line}
+                {i === bootLines.length - 1 && (
+                  <span style={{ opacity: cursorOn ? 1 : 0 }}> _</span>
+                )}
               </div>
             ))}
           </div>
         </div>
+      )}
 
+      {/* Scrollable body */}
+      <div className="panel-scroll" style={{ flex: 1 }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", padding: "48px 40px 0" }}>
+
+          {/* Title block */}
+          <div style={{ marginBottom: "40px" }}>
+            <div style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "clamp(1.4rem, 3vw, 2rem)", letterSpacing: "0.1em", lineHeight: 1 }}>
+              ENTITY CONFIGURATION
+            </div>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", marginTop: "8px", letterSpacing: "0.06em" }}>
+              Program the personality, voice, and lore of your digital entity before connection.
+            </div>
+          </div>
+
+          {/* Box 1: Vocal Cord Synthesis */}
+          <div style={{ marginBottom: "28px" }}>
+            <label style={labelStyle}>Vocal Cord Synthesis</label>
+            <span style={subtitleStyle}>Physical acoustic parameters for ElevenLabs Voice Design. Describes the entity's larynx, resonance, and texture.</span>
+            <textarea
+              value={vocalBlueprint}
+              onChange={(e) => setVocalBlueprint(e.target.value)}
+              rows={3}
+              style={taStyle}
+            />
+          </div>
+
+          <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />
+
+          {/* Box 2: Neural Pathway (System Prompt) */}
+          <div style={{ marginBottom: "28px" }}>
+            <label style={labelStyle}>Neural Pathway — System Prompt</label>
+            <span style={subtitleStyle}>The entity's personality, lore, and behavioural constraints. This is what it believes itself to be.</span>
+            <textarea
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              rows={7}
+              style={taStyle}
+            />
+          </div>
+
+          <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />
+
+          {/* Box 3: Initialization Protocol (First Message) */}
+          <div style={{ marginBottom: "28px" }}>
+            <label style={labelStyle}>Initialization Protocol — First Message</label>
+            <span style={subtitleStyle}>The entity's opening transmission when the connection is established.</span>
+            <textarea
+              value={firstMessage}
+              onChange={(e) => setFirstMessage(e.target.value)}
+              rows={2}
+              style={taStyle}
+            />
+          </div>
+
+          <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />
+
+          {/* Box 4: Phonetic Override (read-only) */}
+          <div style={{ marginBottom: "48px" }}>
+            <label style={labelStyle}>Phonetic Override — Scraped Rules</label>
+            <span style={subtitleStyle}>Acoustic constraints extracted from PHOIBLE phonological data. Read-only. Injected into the agent's speech generation layer.</span>
+            <div style={{ border: "2px solid #F0EAD630", padding: "14px", background: "#0a0a0a" }}>
+              <p style={{ margin: 0, fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", lineHeight: "1.6" }}>
+                {language.phoneticRules}
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Initialize button — full width, inverted */}
+      <div style={{ flexShrink: 0 }}>
+        <button
+          onClick={handleInitialize}
+          disabled={isInitializing}
+          style={{
+            display: "block",
+            width: "100%",
+            background: isInitializing ? "#a09880" : "#F0EAD6",
+            color: "#121212",
+            border: "none",
+            borderTop: "4px solid #F0EAD6",
+            fontFamily: "'Rubik Mono One', monospace",
+            fontSize: "clamp(1rem, 2vw, 1.3rem)",
+            letterSpacing: "0.14em",
+            padding: "22px",
+            cursor: isInitializing ? "not-allowed" : "pointer",
+            textTransform: "uppercase",
+          }}
+        >
+          {isInitializing ? "Initializing..." : "[ Initialize Entity Connection ]"}
+        </button>
       </div>
 
     </div>
   );
 }
 
-// ─── SCREEN 3: Soundscape — The Cinematic Mixer ───────────────────────────────
+// ─── SCREEN 3: The Interrogation Room ────────────────────────────────────────
 
-const PX_PER_SEC = 60;
-const TIMELINE_DURATION = 30;
-const TIME_MARKERS = [0, 5, 10, 15, 20, 25, 30];
-
-function SoundscapeScreen({
+function InterrogationScreen({
   language,
-  clipLibrary,
+  agentConfig,
   onBack,
 }: {
   language: LanguageSignal;
-  clipLibrary: AudioClip[];
+  agentConfig: AgentConfig;
   onBack: () => void;
 }) {
-  const [voiceTrack, setVoiceTrack] = useState<TrackClip[]>([]);
-  const [atmosphereTrack, setAtmosphereTrack] = useState<TrackClip[]>([]);
-  const [atmosphereText, setAtmosphereText] = useState("");
-  const [generatingAtmosphere, setGeneratingAtmosphere] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [atmosphereClips, setAtmosphereClips] = useState<AudioClip[]>([]);
-  const [isLibraryOpen, setIsLibraryOpen] = useState(true);
+  const [messages, setMessages] = useState<{ role: "user" | "entity"; text: string }[]>([
+    { role: "entity", text: agentConfig.firstMessage },
+  ]);
+  const [input, setInput] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const LABEL_W = 120;
-  const trackWidth = TIMELINE_DURATION * PX_PER_SEC;
-  const allSidebarClips = [...clipLibrary, ...atmosphereClips];
+  const ENTITY_RESPONSES: string[] = [
+    "The void hears your words, but the void does not answer directly...",
+    "You speak, and the stone vibrates. But vibration is not truth.",
+    "There are those who have asked before. They are ash now.",
+    "Your question is a door. The door is locked from the inside.",
+    "I have waited in this chamber longer than your civilization has existed.",
+    "What you call language, I call the memory of fire.",
+  ];
 
-  function calcStartTime(e: React.DragEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left + e.currentTarget.scrollLeft;
-    return Math.max(0, Math.min(Math.floor(x / PX_PER_SEC), TIMELINE_DURATION - 1));
-  }
-
-  function handleTrackDrop(trackType: "voice" | "atmosphere", trackSetter: React.Dispatch<React.SetStateAction<TrackClip[]>>, e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    const moveData = e.dataTransfer.getData("application/track-move");
-    if (moveData) {
-      try {
-        const { id, originalDuration } = JSON.parse(moveData) as { id: string; originalDuration: number };
-        const maxStart = Math.max(0, TIMELINE_DURATION - originalDuration);
-        const newStart = Math.min(calcStartTime(e), maxStart);
-        trackSetter((prev) => prev.map((c) => c.id === id ? { ...c, startTime: newStart, duration: originalDuration } : c));
-      } catch { return; }
-      return;
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-    const clipData = e.dataTransfer.getData("application/clip");
-    if (!clipData) return;
-    try {
-      const parsed = JSON.parse(clipData);
-      const clipType = parsed.clipType as string;
-      if (clipType !== trackType) return;
-      const name = typeof parsed.name === "string" ? parsed.name : "";
-      const duration = typeof parsed.duration === "number" && parsed.duration > 0 ? parsed.duration : 0;
-      if (!name || !duration) return;
-      const startTime = calcStartTime(e);
-      const clampedDuration = Math.min(duration, TIMELINE_DURATION - startTime);
-      if (clampedDuration <= 0) return;
-      trackSetter((prev) => [
-        ...prev,
-        { id: `tc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name, startTime, duration: clampedDuration },
-      ]);
-    } catch { return; }
-  }
+  }, [messages, isThinking]);
 
-  function handleGenerateAtmosphere() {
-    if (!atmosphereText.trim() || generatingAtmosphere) return;
-    setGeneratingAtmosphere(true);
+  function handleSend() {
+    if (!input.trim() || isThinking) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setIsThinking(true);
     setTimeout(() => {
-      const dur = Math.floor(Math.random() * 8) + 8;
-      const clip: AudioClip = { id: `atm_${Date.now()}`, name: atmosphereText.trim(), duration: dur };
-      setAtmosphereClips((prev) => [...prev, clip]);
-      setAtmosphereTrack((prev) => [
-        ...prev,
-        { id: `tc_atm_${Date.now()}`, name: clip.name, startTime: 0, duration: TIMELINE_DURATION },
-      ]);
-      setGeneratingAtmosphere(false);
-      setAtmosphereText("");
-    }, 1400);
-  }
-
-  function handlePlayAll() {
-    setIsPlaying(true);
-    setTimeout(() => setIsPlaying(false), 4000);
+      // TODO: ElevenLabs Conversational AI Agent
+      // agent.sendMessage(userMsg) → streamed response with real-time TTS
+      const response = ENTITY_RESPONSES[Math.floor(Math.random() * ENTITY_RESPONSES.length)];
+      setMessages((prev) => [...prev, { role: "entity", text: response }]);
+      setIsThinking(false);
+    }, 1400 + Math.random() * 800);
   }
 
   return (
-    <div className="screen-fade-in" style={{ minHeight: "100vh", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
+    <div className="screen-fade-in" style={{ height: "100vh", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
+
       {/* Header */}
-      <div style={{ borderBottom: "4px solid #F0EAD6", padding: "0 24px", display: "flex", alignItems: "stretch", minHeight: "60px", flexShrink: 0 }}>
-        <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back to Recording</button>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 24px", gap: "16px" }}>
+      <div style={{ borderBottom: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "56px", flexShrink: 0 }}>
+        <button onClick={onBack} style={{ ...outlineBtn, border: "none", borderRight: "2px solid #F0EAD6", fontSize: "1.1rem", padding: "0 24px" }}>← Back</button>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 28px", gap: "16px" }}>
           <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1.2rem", letterSpacing: "0.12em" }}>BABELSOUNDS</span>
           <span style={{ color: "#F0EAD625" }}>|</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>Step 3 of 3 — The Cinematic Mixer</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880" }}>Step 3 of 3 — The Interrogation Room</span>
           <span style={{ color: "#F0EAD625" }}>|</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#F0EAD6" }}>{language.title}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", padding: "0 0 0 16px" }}>
-          <button onClick={handlePlayAll} style={{ ...solidBtn, fontSize: "1.1rem", padding: "0 20px", height: "100%", border: "none", borderLeft: "2px solid #F0EAD6" }}>
-            {isPlaying ? "▶ Playing..." : "▶ Play All"}
-          </button>
-          <button style={{ ...outlineBtn, fontSize: "1.1rem", padding: "0 20px", height: "100%", border: "none", borderLeft: "2px solid #F0EAD6" }}>
-            Export
-          </button>
+        <div style={{ display: "flex", alignItems: "center", padding: "0 24px", gap: "12px" }}>
+          <div style={{ width: "8px", height: "8px", background: "#F0EAD6", borderRadius: "50%", animation: "pulse 2s infinite" }} />
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", letterSpacing: "0.08em" }}>ENTITY CONNECTED</span>
         </div>
       </div>
 
-      {/* Main content: sidebar + timeline */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      {/* Agent config strip */}
+      <div style={{ borderBottom: "1px solid #F0EAD615", padding: "8px 28px", display: "flex", gap: "24px", background: "#0a0a0a", flexShrink: 0 }}>
+        <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          Voice: <span style={{ color: "#a09880" }}>{agentConfig.vocalBlueprint.slice(0, 60)}...</span>
+        </span>
+      </div>
 
-        {/* ── Clip Library Sidebar ── */}
-        {isLibraryOpen && (
-          <div style={{ width: "256px", flexShrink: 0, borderRight: "2px solid #F0EAD6", display: "flex", flexDirection: "column", background: "#0d0d0d" }}>
-            <div style={{ padding: "14px 16px", borderBottom: "2px solid #F0EAD6", fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Clip Library
+      {/* Chat area */}
+      <div ref={scrollRef} className="panel-scroll" style={{ flex: 1, padding: "32px 40px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", gap: "4px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
+              {msg.role === "entity" ? language.title : "You"}
             </div>
-            <div style={{ padding: "10px 16px 6px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", letterSpacing: "0.06em" }}>
-              Drag clips onto a track
+            <div style={{
+              maxWidth: "70%",
+              border: `2px solid ${msg.role === "entity" ? "#F0EAD6" : "#F0EAD650"}`,
+              padding: "14px 18px",
+              background: msg.role === "entity" ? "#0d0d0d" : "transparent",
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.2rem",
+              lineHeight: "1.5",
+              color: msg.role === "entity" ? "#F0EAD6" : "#a09880",
+              letterSpacing: "0.02em",
+            }}>
+              {msg.text}
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
-              {allSidebarClips.length === 0 && (
-                <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", padding: "16px 8px", textAlign: "center", border: "2px dashed #F0EAD625" }}>
-                  No clips yet.
-                </div>
-              )}
-              {allSidebarClips.map((clip) => {
-                const isAtmosphere = atmosphereClips.some((a) => a.id === clip.id);
-                return (
-                <div
-                  key={clip.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("application/clip", JSON.stringify({ id: clip.id, name: clip.name, duration: clip.duration, clipType: isAtmosphere ? "atmosphere" : "voice" }));
-                    e.dataTransfer.effectAllowed = "copy";
-                  }}
-                  style={{
-                    border: "2px solid #F0EAD6",
-                    background: "#121212",
-                    padding: "10px 12px",
-                    marginBottom: "6px",
-                    cursor: "grab",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    userSelect: "none",
-                  }}
-                >
-                  <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", flexShrink: 0, color: "#a09880" }}>▶</span>
-                  <div style={{ flex: 1, overflow: "hidden" }}>
-                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clip.name}</div>
-                    <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880" }}>{clip.duration}s · {isAtmosphere ? "Atmosphere" : "Voice"}</div>
-                  </div>
-                </div>
-              );})}
+          </div>
+        ))}
+        {isThinking && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.7rem", color: "#a0988070", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>{language.title}</div>
+            <div style={{ border: "2px solid #F0EAD630", padding: "14px 18px", background: "#0d0d0d", fontFamily: "'VT323', monospace", fontSize: "1.2rem", color: "#F0EAD640", letterSpacing: "0.08em" }}>
+              . . .
             </div>
           </div>
         )}
-
-        {/* ── Timeline + Atmosphere area ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
-          {/* Timeline */}
-          <div style={{ padding: "24px", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-              <button
-                onClick={() => setIsLibraryOpen((p) => !p)}
-                style={{ ...outlineBtn, fontSize: "1rem", padding: "6px 14px" }}
-              >
-                {isLibraryOpen ? "[<] Close Library" : "[>] Open Library"}
-              </button>
-              <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "1rem", letterSpacing: "0.08em" }}>
-                THE TIMELINE
-              </span>
-            </div>
-
-            <div style={{ border: "2px solid #F0EAD6", overflow: "hidden" }}>
-              {/* Time ruler */}
-              <div style={{ display: "grid", gridTemplateColumns: `${LABEL_W}px 1fr`, borderBottom: "2px solid #F0EAD6", background: "#0d0d0d" }}>
-                <div style={{ borderRight: "2px solid #F0EAD6", padding: "6px 12px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase" }}>
-                  Track
-                </div>
-                <div style={{ overflowX: "auto" }}>
-                  <div style={{ width: `${trackWidth}px`, position: "relative", height: "28px" }}>
-                    {TIME_MARKERS.map((t) => (
-                      <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
-                        <div style={{ width: "1px", background: "#F0EAD630", height: "100%", position: "absolute" }} />
-                        <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#a09880", paddingLeft: "4px", whiteSpace: "nowrap" }}>{t}s</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Track 1: Voices */}
-              <TrackRow
-                label="Voices"
-                labelWidth={LABEL_W}
-                trackWidth={trackWidth}
-                clips={voiceTrack}
-                onRemoveClip={(id) => setVoiceTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleTrackDrop("voice", setVoiceTrack, e)}
-              />
-
-              {/* Track 2: Atmosphere */}
-              <TrackRow
-                label="Atmosphere"
-                labelWidth={LABEL_W}
-                trackWidth={trackWidth}
-                clips={atmosphereTrack}
-                onRemoveClip={(id) => setAtmosphereTrack((p) => p.filter((c) => c.id !== id))}
-                onDrop={(e) => handleTrackDrop("atmosphere", setAtmosphereTrack, e)}
-              />
-            </div>
-          </div>
-
-          {/* Atmosphere generator */}
-          <div style={{ padding: "0 24px 24px" }}>
-            <div style={{ border: "2px solid #F0EAD6" }}>
-              <div style={{ borderBottom: "2px solid #F0EAD6", padding: "10px 16px", background: "#F0EAD608", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Atmosphere Generator
-              </div>
-              <div style={{ padding: "16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", display: "block", marginBottom: "6px", letterSpacing: "0.06em" }}>
-                    Describe the background atmosphere
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. haunting desert wind, deep metallic drones, cave drip resonance..."
-                    value={atmosphereText}
-                    onChange={(e) => setAtmosphereText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleGenerateAtmosphere(); }}
-                    style={{ width: "100%", fontFamily: "'VT323', monospace", fontSize: "1.2rem", padding: "10px 14px" }}
-                  />
-                </div>
-                <button
-                  onClick={handleGenerateAtmosphere}
-                  disabled={generatingAtmosphere || !atmosphereText.trim()}
-                  style={{ ...solidBtn, fontSize: "1.2rem", padding: "12px 24px", marginTop: "24px", opacity: generatingAtmosphere || !atmosphereText.trim() ? 0.5 : 1 }}
-                >
-                  {generatingAtmosphere ? "Generating..." : "Generate Atmosphere"}
-                </button>
-              </div>
-              {generatingAtmosphere && (
-                <div style={{ borderTop: "1px solid #F0EAD625", padding: "8px 16px", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880" }}>
-                  Synthesizing atmosphere via ElevenLabs Music API...
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div style={{ borderTop: "2px solid #F0EAD615", padding: "12px 24px", fontFamily: "'VT323', monospace", fontSize: "0.9rem", color: "#a09880", display: "flex", justifyContent: "space-between", marginTop: "auto" }}>
-            <span>Babelsounds — Dead Language Audio Synthesis</span>
-            <span>v1.0.0</span>
-          </div>
-        </div>
       </div>
-    </div>
-  );
-}
 
-function TrackRow({
-  label,
-  labelWidth,
-  trackWidth,
-  clips,
-  onRemoveClip,
-  onDrop,
-}: {
-  label: string;
-  labelWidth: number;
-  trackWidth: number;
-  clips: TrackClip[];
-  onRemoveClip: (id: string) => void;
-  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-}) {
-  const [dragOver, setDragOver] = useState(false);
+      {/* Input row */}
+      <div style={{ borderTop: "4px solid #F0EAD6", display: "flex", flexShrink: 0 }}>
+        <input
+          type="text"
+          placeholder="Speak into the void..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
+          disabled={isThinking}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            color: "#F0EAD6",
+            fontFamily: "'VT323', monospace",
+            fontSize: "1.3rem",
+            padding: "18px 28px",
+            outline: "none",
+            letterSpacing: "0.04em",
+          }}
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim() || isThinking}
+          style={{ ...solidBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "1.2rem", padding: "0 32px", opacity: !input.trim() || isThinking ? 0.45 : 1 }}
+        >
+          {isThinking ? "..." : "Transmit →"}
+        </button>
+      </div>
 
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: `${labelWidth}px 1fr`, borderTop: "2px solid #F0EAD6", minHeight: "72px" }}>
-      {/* Label column */}
-      <div style={{ borderRight: "2px solid #F0EAD6", padding: "10px 12px", display: "flex", alignItems: "center", background: "#0d0d0d" }}>
-        <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</span>
-      </div>
-      {/* Track area (drop target) */}
-      <div
-        style={{
-          overflowX: "auto",
-          background: dragOver ? "rgba(240, 234, 214, 0.08)" : "#0a0a0a",
-          position: "relative",
-          minHeight: "72px",
-          transition: "background 0.15s",
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = e.dataTransfer.types.includes("application/track-move") ? "move" : "copy";
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { setDragOver(false); onDrop(e); }}
-      >
-        <div style={{ width: `${trackWidth}px`, height: "100%", position: "relative" }}>
-          {TIME_MARKERS.map((t) => (
-            <div key={t} style={{ position: "absolute", left: `${t * PX_PER_SEC}px`, top: 0, bottom: 0, width: "1px", background: "#F0EAD610" }} />
-          ))}
-          {clips.map((clip) => (
-            <div
-              key={clip.id}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData("application/track-move", JSON.stringify({ id: clip.id, originalDuration: clip.duration }));
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              style={{
-                position: "absolute",
-                left: `${clip.startTime * PX_PER_SEC}px`,
-                top: "8px",
-                bottom: "8px",
-                width: `${clip.duration * PX_PER_SEC - 2}px`,
-                background: "#F0EAD6",
-                border: "2px solid #121212",
-                display: "flex",
-                alignItems: "center",
-                padding: "0 22px 0 8px",
-                overflow: "hidden",
-                cursor: "grab",
-              }}
-              title={clip.name}
-            >
-              <span style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#121212", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "0.04em", flex: 1 }}>
-                {clip.name}
-              </span>
-              <button
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onRemoveClip(clip.id); }}
-                draggable={false}
-                style={{
-                  position: "absolute",
-                  top: "2px",
-                  right: "2px",
-                  width: "18px",
-                  height: "18px",
-                  background: "#121212",
-                  color: "#F0EAD6",
-                  border: "1px solid #F0EAD680",
-                  fontFamily: "'VT323', monospace",
-                  fontSize: "0.85rem",
-                  lineHeight: "1",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 0,
-                }}
-                title="Remove clip"
-              >
-                x
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -1178,19 +802,11 @@ function DataSynthesisTransition({ onComplete }: { onComplete: () => void }) {
 export default function App() {
   const [screen, setScreen] = useState<Screen>("archives");
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageSignal | null>(null);
-  const [clipLibrary, setClipLibrary] = useState<AudioClip[]>([]);
+  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
 
   function handleSelectLanguage(sig: LanguageSignal) {
     setSelectedLanguage(sig);
     setScreen("transition");
-  }
-
-  function handleAddClip(clip: AudioClip) {
-    setClipLibrary((prev) => [...prev, clip]);
-  }
-
-  function handleDeleteClip(id: string) {
-    setClipLibrary((prev) => prev.filter((c) => c.id !== id));
   }
 
   if (screen === "transition") {
@@ -1201,20 +817,20 @@ export default function App() {
     return (
       <RecordingScreen
         language={selectedLanguage}
-        clipLibrary={clipLibrary}
-        onAddClip={handleAddClip}
-        onDeleteClip={handleDeleteClip}
         onBack={() => setScreen("archives")}
-        onProceed={() => setScreen("soundscape")}
+        onProceed={(config) => {
+          setAgentConfig(config);
+          setScreen("interrogation");
+        }}
       />
     );
   }
 
-  if (screen === "soundscape" && selectedLanguage) {
+  if (screen === "interrogation" && selectedLanguage && agentConfig) {
     return (
-      <SoundscapeScreen
+      <InterrogationScreen
         language={selectedLanguage}
-        clipLibrary={clipLibrary}
+        agentConfig={agentConfig}
         onBack={() => setScreen("recording")}
       />
     );

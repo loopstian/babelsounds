@@ -1,0 +1,30 @@
+"Refactor **Screen 1 (The Archives)** and **Screen 2 (The Forge)** to change the app's core purpose: we are no longer building static audio clips on a timeline. We are researching and configuring a real-time conversational AI Agent.
+
+**1. Update the Screen 1 Data Payload (The 'Entity Profile'):**
+Update the mock `languageSignals` data to reflect this new goal. When a user researches a language (e.g., 'Camazotz Ritual Phonetics'), the data passed to Screen 2 must include:
+- `vocalBlueprint`: A physical description of the voice for the ElevenLabs `voiceToText.design` API (e.g., 'A terrifying, raspy, echoing ancient creature').
+- `systemPrompt`: A rich character description for the Agent (e.g., 'You are an ancient Mayan death-bat trapped in a digital terminal. You speak in riddles about blood and darkness.').
+- `firstMessage`: The Agent's opening line when connected (e.g., 'Who disturbs the stone?').
+- `phoneticRules`: The rules the Agent must follow to generate its spoken gibberish (e.g., 'Use heavy q, x, and tl sounds. Avoid soft consonants.').
+
+**2. Refactor Screen 2 (The Forge - Agent Configuration):**
+- Remove the 'Clip Library' entirely. This screen is now a single-column, centralized 'Boot Sequence' panel.
+- **Header:** Title it `ENTITY CONFIGURATION`. Keep the 'Back' button.
+- **The Layout (A Vertical Stack of Terminals):**
+    - **Box 1: VOCAL CORD SYNTHESIS:** A text area bound to `vocalBlueprint`. Subtitle: 'Physical acoustic parameters for ElevenLabs Voice Design.'
+    - **Box 2: NEURAL PATHWAY (SYSTEM PROMPT):** A large text area bound to `systemPrompt`. Subtitle: 'The entity's personality, lore, and behavioral constraints.'
+    - **Box 3: INITIALIZATION PROTOCOL (FIRST MESSAGE):** A small text area bound to `firstMessage`.
+    - **Box 4: PHONETIC OVERRIDE:** A read-only box displaying the `phoneticRules` scraped from Screen 1.
+- **The Action Button:** Place a massive, full-width, inverted-color button at the bottom: `[ INITIALIZE ENTITY CONNECTION ]`.
+
+**3. State Handoff (The Mock API Call):**
+- When `[ INITIALIZE ENTITY CONNECTION ]` is clicked, simulate the creation of the ElevenLabs Agent.
+- Set a state `isInitializing` to `true` to show a brief 'Booting...' terminal animation.
+- After 1.5 seconds, transition the `currentScreen` state from 'recording' to a new screen state called `'interrogation'` (which will replace the old 'soundscape' screen).
+- Pass the edited `vocalBlueprint`, `systemPrompt`, and `firstMessage` forward to this new screen.
+
+**4. Visual Polish:**
+- Maintain the strict brutalist styling: `#121212` background, `#F0EAD6` borders/text, `VT323` font.
+- Ensure the text areas in Screen 2 look like editable command-line inputs (harsh borders, monospace font).
+
+**Please restructure the flow so the user feels like they are programming the personality and voice of a digital ghost before stepping into the chat room.**"
