@@ -296,34 +296,11 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
         body: JSON.stringify({ userPrompt: query.trim() }),
       });
       if (!res.ok) throw new Error(`Research API returned ${res.status}`);
-      const { queries: parsed } = (await res.json()) as { queries: { site: string; query: string }[] };
-      console.log("[Babelsounds] Triangulated search queries:", parsed);
-
-      const proxyUrl = `${import.meta.env.BASE_URL}firecrawl-proxy`;
-
-      const scrapedResults = await Promise.all(
-        parsed.map(async (item) => {
-          try {
-            const res = await fetch(proxyUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                query: `site:${item.site} ${item.query}`,
-                limit: 1,
-                scrapeOptions: { formats: ["markdown"] },
-              }),
-            });
-            if (!res.ok) throw new Error(`Firecrawl proxy returned ${res.status}`);
-            const json = await res.json();
-            const markdown: string = json?.data?.[0]?.markdown ?? "";
-            return { site: item.site, markdown };
-          } catch (fetchErr) {
-            console.error(`[Babelsounds] Firecrawl error for ${item.site}:`, fetchErr);
-            return { site: item.site, markdown: "" };
-          }
-        })
-      );
-      console.log("[Babelsounds] Scraped Markdown data:", scrapedResults);
+      const data = (await res.json()) as {
+        queries: { site: string; query: string }[];
+        scraped: { site: string; query: string; markdown: string }[];
+      };
+      console.log("[Babelsounds] Research result:", data);
     } catch (err) {
       console.error("[Babelsounds] Search pipeline error:", err);
     } finally {

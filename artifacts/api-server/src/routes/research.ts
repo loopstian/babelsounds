@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import FirecrawlApp from "@mendable/firecrawl-js";
 
 const router: IRouter = Router();
 
@@ -23,27 +24,69 @@ router.post("/research", async (req, res) => {
     return;
   }
 
-  const apiKey = process.env["GEMINI_SECRET"];
-  if (!apiKey) {
+  const geminiKey = process.env["GEMINI_SECRET"];
+  if (!geminiKey) {
     res.status(500).json({ error: "GEMINI_SECRET is not configured" });
     return;
   }
 
+  const firecrawlKey = process.env["FIRECRAWL_SECRET"] ?? process.env["FIRECRWL_SECRECT"];
+  if (!firecrawlKey) {
+    res.status(500).json({ error: "FIRECRAWL_SECRET is not configured" });
+    return;
+  }
+
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
       systemInstruction: SYSTEM_INSTRUCTION,
     });
 
-    const result = await model.generateContent(userPrompt.trim());
-    const text = result.response.text().trim();
-    const parsed = JSON.parse(text);
+    const geminiResult = await model.generateContent(userPrompt.trim());
+    const text = geminiResult.response.text().trim();
+    const queries: { site: string; query: string }[] = JSON.parse(text);
+    console.log("[research] Gemini queries:", queries);
 
-    res.json({ queries: parsed });
+    const firecrawl = new FirecrawlApp({ apiKey: firecrawlKey });
+
+    const scrapedResults = await Promise.all(
+      queries.map(async (item) => {
+        try {
+          const searchResult = await firecrawl.search(
+            `site:${item.site} ${item.query}`,
+            {
+              limit: 1,
+              scrapeOptions: { formats: ["markdown"] },
+            },
+          );
+          const raw = searchResult as Record<string, unknown>;
+          const webArr = Array.isArray(raw.data) ? raw.data : Array.isArray(raw.web) ? raw.web : [];
+          const firstResult = webArr[0] as Record<string, unknown> | undefined;
+          const markdown: string = (firstResult?.markdown as string) ?? "";
+          return { site: item.site, query: item.query, markdown };
+        } catch (crawlErr) {
+          console.error(
+            `[research] Firecrawl error for ${item.site}:`,
+            crawlErr,
+          );
+          return { site: item.site, query: item.query, markdown: "" };
+        }
+      }),
+    );
+
+    console.log(
+      "[research] Scrape complete:",
+      scrapedResults.map((r) => ({
+        site: r.site,
+        chars: r.markdown.length,
+      })),
+    );
+
+    res.json({ queries, scraped: scrapedResults });
   } catch (err) {
-    console.error("[research] Gemini error:", err);
-    res.status(500).json({ error: "Failed to generate research queries" });
+    console.error("[research] Pipeline error:", err);
+    res.status(500).json({ error: "Research pipeline failed" });
   }
 });
 

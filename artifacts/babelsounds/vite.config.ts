@@ -71,14 +71,6 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      [`${basePath}firecrawl-proxy`]: {
-        target: "https://api.firecrawl.dev",
-        changeOrigin: true,
-        rewrite: () => "/v1/search",
-        headers: {
-          Authorization: `Bearer ${process.env.FIRECRAWL_SECRET ?? ""}`,
-        },
-      },
     },
   },
   preview: {
@@ -86,5 +78,4 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
   },
-  define: {},
 });
