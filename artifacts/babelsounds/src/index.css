@@ -105,6 +105,17 @@ body::before {
   50% { opacity: 0.4; transform: scale(0.7); }
 }
 
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.05; }
+  60% { opacity: 0.9; }
+  75% { opacity: 0.1; }
+}
+
+.telemetry-flicker {
+  animation: flicker 0.35s step-end infinite;
+}
+
 .blink {
   animation: blink 1s step-end infinite;
 }

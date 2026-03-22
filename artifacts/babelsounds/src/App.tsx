@@ -61,6 +61,47 @@ const outlineBtn: React.CSSProperties = {
 };
 
 
+// ─── Active Scan Placeholder ──────────────────────────────────────────────────
+
+const TELEMETRY_LINES = [
+  "[WIKI: CONNECTED]",
+  "[WIKI: DOWNLOADING PHONOLOGY DATA...]",
+  "[PHOIBLE: EXTRACTING DNA]",
+  "[PHOIBLE: PARSING CONSONANT INVENTORY...]",
+  "[WIKTIONARY: PARSING LEXICON]",
+  "[WIKTIONARY: ISOLATING IPA STRINGS...]",
+  "[CROSS-SOURCE: TRIANGULATING...]",
+  "[ACOUSTIC PROFILE: INITIALIZING]",
+  "[PHONETIC DNA: DECODING]",
+  "[GEMINI-2.5-FLASH: SYNTHESIZING DOSSIER...]",
+];
+
+function ScanPlaceholder() {
+  const [blinkOn, setBlinkOn] = useState(true);
+  const [telemetryIdx, setTelemetryIdx] = useState(0);
+
+  useEffect(() => {
+    const blinkIv = setInterval(() => setBlinkOn((v) => !v), 530);
+    const telIv = setInterval(() => setTelemetryIdx((v) => (v + 1) % TELEMETRY_LINES.length), 380);
+    return () => { clearInterval(blinkIv); clearInterval(telIv); };
+  }, []);
+
+  return (
+    <div style={{ border: "3px dashed #F0EAD630", padding: "36px 28px", background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "0.06em" }}>
+        <span style={{ color: "#F0EAD6", opacity: blinkOn ? 1 : 0, transition: "none" }}>█</span>
+        <span style={{ color: "#F0EAD6" }}>&gt; INITIATING CROSS-SOURCE TRIANGULATION...</span>
+      </div>
+      <div className="telemetry-flicker" style={{ fontFamily: "'VT323', monospace", fontSize: "1.15rem", color: "#8a9ab5", letterSpacing: "0.08em" }}>
+        {TELEMETRY_LINES[telemetryIdx]}
+      </div>
+      <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#a09880", letterSpacing: "0.06em", opacity: 0.5 }}>
+        AWAITING SYNTHESIS OUTPUT FROM GEMINI-2.5-FLASH...
+      </div>
+    </div>
+  );
+}
+
 // ─── Language Detail Modal ────────────────────────────────────────────────────
 
 function LanguageModal({
@@ -109,10 +150,53 @@ function LanguageModal({
         </div>
 
         {/* Scrollable content */}
-        <div className="panel-scroll" style={{ flex: 1, padding: "24px", display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div className="panel-scroll" style={{ flex: 1, padding: "24px", display: "flex", flexDirection: "column", gap: "0" }}>
 
-          {/* Section 1: Dictionary Entry — Wiktionary */}
-          <div>
+          {/* Block 1: THE LORE — Wikipedia */}
+          <div style={{ paddingBottom: "24px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.78rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ border: "1px solid #a0988050", padding: "2px 8px" }}>Wikipedia</span>
+              <span style={{ color: "#F0EAD618" }}>—</span>
+              <span>The Lore</span>
+            </div>
+            <div style={{ border: "2px solid #F0EAD6", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <p style={{ margin: 0, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.95rem", color: "#a09880", lineHeight: "1.75", fontStyle: "italic" }}>
+                {signal.culturalContext}
+              </p>
+              <div style={{ borderTop: "1px solid #F0EAD620", paddingTop: "14px" }}>
+                <p style={{ margin: 0, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.95rem", color: "#F0EAD6", lineHeight: "1.75" }}>
+                  {signal.acousticConsensus}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: "1px solid #F0EAD630", marginBottom: "24px" }} />
+
+          {/* Block 2: THE DNA — PHOIBLE */}
+          <div style={{ paddingBottom: "24px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.78rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ border: "1px solid #a0988050", padding: "2px 8px" }}>PHOIBLE</span>
+              <span style={{ color: "#F0EAD618" }}>—</span>
+              <span>The DNA</span>
+            </div>
+            <div style={{ border: "2px solid #F0EAD6", padding: "18px 20px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {signal.phoneticInventory.map((ph, i) => (
+                  <div key={i} style={{ border: "2px solid #F0EAD6", padding: "8px 14px", fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "1.4rem", color: "#8a9ab5", letterSpacing: "0.04em", background: "#0d0d0d", minWidth: "48px", textAlign: "center" }}>
+                    {ph}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ borderTop: "1px solid #F0EAD630", marginBottom: "24px" }} />
+
+          {/* Block 3: THE LEXICON — Wiktionary */}
+          <div style={{ paddingBottom: "24px" }}>
             <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.78rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ border: "1px solid #a0988050", padding: "2px 8px" }}>Wiktionary</span>
               <span style={{ color: "#F0EAD618" }}>—</span>
@@ -134,44 +218,7 @@ function LanguageModal({
             </div>
           </div>
 
-          {/* Section 2: Phonological Inventory — PHOIBLE */}
-          <div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.78rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ border: "1px solid #a0988050", padding: "2px 8px" }}>PHOIBLE</span>
-              <span style={{ color: "#F0EAD618" }}>—</span>
-              <span>Phonological Inventory</span>
-            </div>
-            <div style={{ border: "2px solid #F0EAD6", padding: "18px 20px" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {signal.phoneticInventory.map((ph, i) => (
-                  <div key={i} style={{ border: "2px solid #F0EAD6", padding: "8px 14px", fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "1.4rem", color: "#8a9ab5", letterSpacing: "0.04em", background: "#0d0d0d", minWidth: "48px", textAlign: "center" }}>
-                    {ph}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Cultural Consensus — Wikipedia */}
-          <div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.78rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ border: "1px solid #a0988050", padding: "2px 8px" }}>Wikipedia</span>
-              <span style={{ color: "#F0EAD618" }}>—</span>
-              <span>Cultural Consensus</span>
-            </div>
-            <div style={{ border: "2px solid #F0EAD6", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-              <p style={{ margin: 0, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.95rem", color: "#a09880", lineHeight: "1.75", fontStyle: "italic" }}>
-                {signal.culturalContext}
-              </p>
-              <div style={{ borderTop: "1px solid #F0EAD620", paddingTop: "14px" }}>
-                <p style={{ margin: 0, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.95rem", color: "#F0EAD6", lineHeight: "1.75" }}>
-                  {signal.acousticConsensus}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 4: Verification Footer */}
+          {/* Divider + Source Footer */}
           <div style={{ borderTop: "1px solid #F0EAD615", paddingTop: "14px", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.8rem", color: "#a0988060", letterSpacing: "0.08em", textTransform: "uppercase" }}>Verified via</span>
             {["Wikipedia", "PHOIBLE", "Wiktionary"].map((src) => (
@@ -190,7 +237,6 @@ function LanguageModal({
 function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: LanguageSignal) => void }) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [languageSignals, setLanguageSignals] = useState<LanguageSignal[]>([]);
   const [inspecting, setInspecting] = useState<LanguageSignal | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -202,13 +248,6 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
     if (!query.trim() || searching) return;
     setSearching(true);
     setSearchError(null);
-    setProgress(0);
-
-    let p = 0;
-    const iv = setInterval(() => {
-      p = Math.min(p + Math.floor(Math.random() * 4) + 1, 90);
-      setProgress(p);
-    }, 200);
 
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}api/research`, {
@@ -223,14 +262,9 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
     } catch (err) {
       console.error("[Babelsounds] Search pipeline error:", err);
       setSearchError("Signal recovery failed. Try again.");
-      clearInterval(iv);
-      setProgress(0);
+    } finally {
       setSearching(false);
-      return;
     }
-    clearInterval(iv);
-    setProgress(100);
-    setSearching(false);
   }
 
   function MatchBar({ value }: { value: number }) {
@@ -281,20 +315,9 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
                   style={{ flex: 1, fontFamily: "'VT323', monospace", fontSize: "1.4rem", padding: "16px 20px", color: "#F0EAD6 !important" as "inherit", outline: "none", borderRight: "2px solid #F0EAD6 !important" as "inherit" }}
                 />
                 <button onClick={handleSearch} disabled={searching} style={{ ...solidBtn, fontSize: "1.1rem", padding: "16px 32px", border: "none", borderLeft: "2px solid #F0EAD6", whiteSpace: "nowrap", opacity: searching ? 0.75 : 1, letterSpacing: "0.06em" }}>
-                  {searching ? "[ SCANNING ARCHIVES... ]" : "[ SEARCH ]"}
+                  {searching ? "[ SCANNING... ]" : "[ SEARCH ]"}
                 </button>
               </div>
-              {(searching || progress > 0) && (
-                <div style={{ borderTop: "2px solid #F0EAD625" }}>
-                  <div style={{ height: "4px", background: "#0a0a0a", position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${progress}%`, background: !searching && progress >= 100 ? "#F0EAD6" : "#a09880", transition: "width 0.08s" }} />
-                  </div>
-                  <div style={{ padding: "6px 20px", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", display: "flex", justifyContent: "space-between" }}>
-                    <span>{searching ? "Recovering signal from the archive..." : "Signal recovered"}</span>
-                    <span>{progress}%</span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {searchError && (
@@ -304,14 +327,16 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
             )}
 
             <div style={{ marginTop: "40px" }}>
-              {languageSignals.length === 0 && !searching ? (
+              {searching ? (
+                <ScanPlaceholder />
+              ) : languageSignals.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "60px 20px" }}>
                   <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", color: "#a09880", letterSpacing: "0.08em", lineHeight: 1.8 }}>
                     {"> NO SIGNALS DETECTED."}<br />
                     {"INITIATE SCAN TO RECOVER ANCIENT PHONETICS."}
                   </div>
                 </div>
-              ) : languageSignals.length > 0 ? (
+              ) : (
                 <>
                   <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginBottom: "10px", letterSpacing: "0.06em" }}>
                     {languageSignals.length} recovered signal{languageSignals.length !== 1 ? "s" : ""} — triangulated from Wikipedia, PHOIBLE, Wiktionary
@@ -329,7 +354,7 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
                     </div>
                   ))}
                 </>
-              ) : null}
+              )}
             </div>
           </div>
         </div>

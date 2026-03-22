@@ -1,0 +1,23 @@
+"I want to refine the UI for **Screen 1 (The Archives)** to make the search process more immersive and reorganize the data in the research modal.
+
+**1. The 'Active Scan' Visualization:**
+- When the user clicks 'Search', instead of just changing the button text or showing a percentage bar, display a **'Data Recovery Placeholder'** in the list area where the results will eventually appear.
+- **Styling:** This placeholder should look like a blank signal card with a thick dashed border.
+- **Content:** Inside the placeholder, show a terminal-style animation:
+    - A blinking cursor followed by: `> INITIATING CROSS-SOURCE TRIANGULATION...`
+    - Add a few lines of 'scrolling telemetry' text that flickers rapidly (e.g., `[WIKI: CONNECTED]`, `[PHOIBLE: EXTRACTING DNA]`, `[WIKTIONARY: PARSING LEXICON]`).
+    - Use the 'VT323' font and keep the cream-on-black color scheme.
+- **Behavior:** As soon as the backend returns the actual `languageSignals` data, remove this placeholder and render the real signal card.
+
+**2. Research Dossier Reorganization (The Modal):**
+- Change the vertical order of the information blocks in the scrollable body of the modal:
+    - **Block 1 (Top): THE LORE (Wikipedia Data):** Display the `culturalContext` and the `acousticConsensus` paragraphs first. This sets the historical and sonic stage.
+    - **Block 2 (Middle): THE DNA (PHOIBLE Data):** Keep the 'PHONOLOGICAL INVENTORY' grid here.
+    - **Block 3 (Bottom): THE LEXICON (Wiktionary Data):** Move the dictionary entry (Word, IPA, Type, Meaning) to the bottom of the scrollable content, just above the sources footer.
+- **Visual Polish:** Add a subtle horizontal divider (`border-t border-[#F0EAD6]/30`) between these three blocks to keep the layout clean and academic.
+
+**3. Cleanup:**
+- Remove the old 'Searching...' percentage text if it still exists.
+- Ensure the 'USE THIS LANGUAGE' and 'CLOSE' buttons remain sticky at the top-right as previously implemented.
+
+**Please update the UI so the search feels like a live data stream and the research dossier follows a logical narrative flow (History -> Sounds -> Example Word).**"
