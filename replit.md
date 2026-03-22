@@ -59,9 +59,13 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
 - App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
 - Routes: `src/routes/index.ts` mounts sub-routers
   - `src/routes/health.ts` — `GET /api/healthz`
-  - `src/routes/research.ts` — `POST /api/research` — accepts `{ userPrompt }`, calls Gemini `gemini-2.5-flash-lite` with linguistic archaeologist system prompt, returns `{ queries: [{site, query}] }` (3 triangulated search queries for Wikipedia, PHOIBLE, Wiktionary)
-- Depends on: `@workspace/db`, `@workspace/api-zod`, `@google/generative-ai`
-- Secrets used: `GEMINI_SECRET` (server-side only, never exposed to browser)
+  - `src/routes/research.ts` — `POST /api/research` — 3-step AI pipeline:
+    1. **Query generation**: Gemini `gemini-2.5-flash-lite` generates 3 site-specific search queries (Wikipedia, PHOIBLE, Wiktionary)
+    2. **Web scraping**: Firecrawl SDK scrapes all 3 sites in parallel via `Promise.all`
+    3. **Synthesis**: Gemini `gemini-2.5-flash` (full model) synthesizes scraped data into a structured Language Signal JSON with schema validation
+    - Returns `{ signal: LanguageSignal }` — a complete language dossier with name, matchScore, lexiconSample, phoneticInventory, acousticConsensus, culturalContext, vocalBlueprint, typingGuide, systemPrompt, firstMessage, and grounded source URLs
+- Depends on: `@workspace/db`, `@workspace/api-zod`, `@google/generative-ai`, `@mendable/firecrawl-js`
+- Secrets used: `GEMINI_SECRET`, `FIRECRAWL_SECRET` (also checked as `FIRECRWL_SECRECT` — legacy typo fallback) — all server-side only
 - `pnpm --filter @workspace/api-server run dev` — run the dev server
 - `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
 - Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest

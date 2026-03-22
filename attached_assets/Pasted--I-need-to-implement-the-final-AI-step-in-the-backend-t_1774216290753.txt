@@ -1,0 +1,37 @@
+"I need to implement the final AI step in the backend to synthesize the raw web data into a structured 'Research Dossier' and clean up the frontend UI.
+
+**1. Backend Synthesis (server.js):**
+- Update the `POST /api/research` route to add a final 'Synthesis' step after the Firecrawl searches are complete.
+- **The Model:** Use `gemini-2.5-flash` (not the lite version) for this final step to ensure high-quality reasoning.
+- **The Input:** Pass the user's original prompt AND the 3 Markdown chunks (Wikipedia, PHOIBLE, Wiktionary) to Gemini.
+- **The System Instruction:** 
+  'You are a Master Linguistic Archaeologist. Your task is to analyze the provided scraped text from Wikipedia, PHOIBLE, and Wiktionary to reconstruct a "Language Signal". 
+  
+  You must output a single, valid JSON object following this exact schema:
+  {
+    "id": "unique_string",
+    "name": "Full Language Name",
+    "matchScore": number (1-100, how well it fits user intent),
+    "lexiconSample": { "word": "example_word", "type": "noun/verb", "ipa": "/phonetic/", "meaning": "translation" },
+    "phoneticInventory": ["symbol1", "symbol2", ...], (from PHOIBLE data)
+    "acousticConsensus": "A 2-3 sentence summary of the sound and history",
+    "culturalContext": "Era and Region",
+    "vocalBlueprint": "A highly descriptive ElevenLabs prompt (e.g., A deep, raspy ancient voice...)",
+    "typingGuide": "Short rules for the user: Use k, q, avoid f...",
+    "sources": ["url1", "url2", ...]
+  }
+  
+  Only use facts found in the provided text. If PHOIBLE data is missing, use your internal knowledge to provide a highly probable phonetic inventory for that specific language. Return ONLY the raw JSON.'
+
+- **The Response:** The backend should now return this synthesized JSON object to the frontend.
+
+**2. Frontend 'Fresh Start' (React):**
+- **Wipe Mock Data:** Remove the hardcoded array of `languageSignals`. Initialize the state as an empty array: `const [languageSignals, setLanguageSignals] = useState([]);`.
+- **Empty State UI:** If `languageSignals` is empty and no search is active, display a centered terminal message in Screen 1: `> NO SIGNALS DETECTED. INITIATE SCAN TO RECOVER ANCIENT PHONETICS.`
+- **Populate List:** When the backend returns the synthesized JSON object, append it to the `languageSignals` array. The UI should instantly render the new 'Recovered Signal' card.
+
+**3. Functional Polish:**
+- Ensure the 'Search' button resets correctly after the full pipeline (Gemini -> Firecrawl -> Gemini) is complete.
+- Maintain all existing brutalist styling, fonts, and the loading transition logic.
+
+**Please ensure the backend properly awaits all three AI/Scraping steps before sending the final, cleaned JSON back to the UI.**"
