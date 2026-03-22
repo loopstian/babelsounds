@@ -1,0 +1,36 @@
+"I need to implement the first step of the AI backend for **Screen 1 (The Archives)** using Google Gemini to generate targeted search queries.
+
+**1. Setup and Configuration:**
+- Install the `@google/generative-ai` package.
+- My API key is stored in Replit Secrets under the name `GEMINI_SECRET`. Please configure Vite so this secret is accessible to the React frontend (e.g., mapping it to `import.meta.env.VITE_GEMINI_SECRET`).
+
+**2. The Gemini Integration:**
+- In the component where the 'Search' input and button live, import `GoogleGenerativeAI`.
+- Initialize the client using the `VITE_GEMINI_SECRET`.
+- We will use the model: `gemini-2.5-flash-lite`.
+
+**3. The Triangulated Search Logic:**
+- Create an async function `handleSearch` that triggers when the user clicks the 'Search' button or presses Enter.
+- Disable the button and change its text to `[ SCANNING ARCHIVES... ]` while the request is pending.
+- We need Gemini to output strict JSON. Send the user's search input to the model with the following *System Instruction*:
+  
+  'You are a linguistic archaeologist. The user will give you a thematic concept for a sound or language (e.g., "spooky cave talk"). Your job is to identify a real historical, extinct, or mythological language that fits this theme (e.g., "Nahuatl", "Akkadian", "Old Norse"). 
+  
+  You must return a raw JSON array containing exactly three objects. Each object represents a highly targeted search query for a specific database.
+  
+  The JSON format MUST be exactly this:
+  [
+    { \"site\": \"wikipedia.org\", \"query\": \"[Language Name] phonology history acoustics\" },
+    { \"site\": \"phoible.org\", \"query\": \"[Language Name] phonetic inventory consonants vowels\" },
+    { \"site\": \"en.wiktionary.org\", \"query\": \"[Language Name] IPA pronunciation etymology\" }
+  ]
+  Do not include markdown formatting like ```json. Return ONLY the raw array.'
+
+**4. The Output & Error Handling:**
+- Parse the returned JSON string into a JavaScript array.
+- For now, do NOT update the UI with mock data. 
+- Simply `console.log()` the parsed array of 3 search queries so I can verify the prompt engineering is working.
+- If the JSON parsing fails or the API errors out, catch the error, `console.error` it, and reset the button.
+- Reset the button state back to 'Search' when the log is complete.
+
+**Please preserve all current brutalist styling and layout. Only wire up this initial Gemini API call.**"

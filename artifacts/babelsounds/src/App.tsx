@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -277,20 +278,48 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  function handleSearch() {
+  async function handleSearch() {
     if (!query.trim() || searching) return;
     setSearching(true);
     setSearchDone(false);
     setProgress(0);
+
     let p = 0;
     const iv = setInterval(() => {
-      p += Math.floor(Math.random() * 9) + 4;
-      if (p >= 100) {
-        p = 100; clearInterval(iv);
-        setSearching(false); setSearchDone(true);
-      }
+      p = Math.min(p + Math.floor(Math.random() * 6) + 2, 90);
       setProgress(p);
-    }, 75);
+    }, 120);
+
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_SECRET as string;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-lite",
+        systemInstruction: `You are a linguistic archaeologist. The user will give you a thematic concept for a sound or language (e.g., "spooky cave talk"). Your job is to identify a real historical, extinct, or mythological language that fits this theme (e.g., "Nahuatl", "Akkadian", "Old Norse").
+
+You must return a raw JSON array containing exactly three objects. Each object represents a highly targeted search query for a specific database.
+
+The JSON format MUST be exactly this:
+[
+  { "site": "wikipedia.org", "query": "[Language Name] phonology history acoustics" },
+  { "site": "phoible.org", "query": "[Language Name] phonetic inventory consonants vowels" },
+  { "site": "en.wiktionary.org", "query": "[Language Name] IPA pronunciation etymology" }
+]
+Do not include markdown formatting like \`\`\`json. Return ONLY the raw array.`,
+      });
+
+      const result = await model.generateContent(query.trim());
+      const text = result.response.text().trim();
+      const parsed = JSON.parse(text);
+      console.log("[Babelsounds] Triangulated search queries:", parsed);
+    } catch (err) {
+      console.error("[Babelsounds] Gemini search error:", err);
+    } finally {
+      clearInterval(iv);
+      setProgress(100);
+      setSearching(false);
+      setSearchDone(true);
+    }
   }
 
   function MatchBar({ value }: { value: number }) {
@@ -340,8 +369,8 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
                   onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
                   style={{ flex: 1, fontFamily: "'VT323', monospace", fontSize: "1.4rem", padding: "16px 20px", color: "#F0EAD6 !important" as "inherit", outline: "none", borderRight: "2px solid #F0EAD6 !important" as "inherit" }}
                 />
-                <button onClick={handleSearch} style={{ ...solidBtn, fontSize: "1.3rem", padding: "16px 32px", border: "none", borderLeft: "2px solid #F0EAD6" }}>
-                  {searching ? "Searching..." : "Search"}
+                <button onClick={handleSearch} disabled={searching} style={{ ...solidBtn, fontSize: "1.1rem", padding: "16px 32px", border: "none", borderLeft: "2px solid #F0EAD6", whiteSpace: "nowrap", opacity: searching ? 0.75 : 1, letterSpacing: "0.06em" }}>
+                  {searching ? "[ SCANNING ARCHIVES... ]" : "[ SEARCH ]"}
                 </button>
               </div>
               {(searching || searchDone) && (

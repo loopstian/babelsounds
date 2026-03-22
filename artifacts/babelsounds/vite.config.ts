@@ -72,4 +72,7 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
   },
+  define: {
+    "import.meta.env.VITE_GEMINI_SECRET": JSON.stringify(process.env.GEMINI_SECRET ?? ""),
+  },
 });
