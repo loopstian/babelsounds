@@ -75,41 +75,18 @@ const outlineBtn: React.CSSProperties = {
 
 // ─── Active Scan Placeholder ──────────────────────────────────────────────────
 
-const TELEMETRY_LINES = [
-  "[WIKI: CONNECTED]",
-  "[WIKI: DOWNLOADING PHONOLOGY DATA...]",
-  "[PHOIBLE: EXTRACTING DNA]",
-  "[PHOIBLE: PARSING CONSONANT INVENTORY...]",
-  "[WIKTIONARY: PARSING LEXICON]",
-  "[WIKTIONARY: ISOLATING IPA STRINGS...]",
-  "[CROSS-SOURCE: TRIANGULATING...]",
-  "[ACOUSTIC PROFILE: INITIALIZING]",
-  "[PHONETIC DNA: DECODING]",
-  "[GEMINI-2.5-FLASH: SYNTHESIZING DOSSIER...]",
-];
-
 function ScanPlaceholder() {
   const [blinkOn, setBlinkOn] = useState(true);
-  const [telemetryIdx, setTelemetryIdx] = useState(0);
 
   useEffect(() => {
-    const blinkIv = setInterval(() => setBlinkOn((v) => !v), 530);
-    const telIv = setInterval(() => setTelemetryIdx((v) => (v + 1) % TELEMETRY_LINES.length), 380);
-    return () => { clearInterval(blinkIv); clearInterval(telIv); };
+    const blinkIv = setInterval(() => setBlinkOn((v) => !v), 500);
+    return () => clearInterval(blinkIv);
   }, []);
 
   return (
-    <div style={{ border: "3px dashed #F0EAD630", padding: "36px 28px", background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "0.06em" }}>
-        <span style={{ color: "#F0EAD6", opacity: blinkOn ? 1 : 0, transition: "none" }}>█</span>
-        <span style={{ color: "#F0EAD6" }}>&gt; INITIATING CROSS-SOURCE TRIANGULATION...</span>
-      </div>
-      <div className="telemetry-flicker" style={{ fontFamily: "'VT323', monospace", fontSize: "1.15rem", color: "#8a9ab5", letterSpacing: "0.08em" }}>
-        {TELEMETRY_LINES[telemetryIdx]}
-      </div>
-      <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#a09880", letterSpacing: "0.06em", opacity: 0.5 }}>
-        AWAITING SYNTHESIS OUTPUT FROM GEMINI-2.5-FLASH...
-      </div>
+    <div style={{ border: "3px dashed #F0EAD630", padding: "36px 28px", background: "#0a0a0a", display: "flex", alignItems: "center", gap: "10px", fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "0.06em" }}>
+      <span style={{ color: "#F0EAD6" }}>&gt; INITIATING CROSS-SOURCE TRIANGULATION...</span>
+      <span style={{ color: "#F0EAD6", opacity: blinkOn ? 1 : 0, transition: "none" }}>█</span>
     </div>
   );
 }
@@ -723,6 +700,8 @@ function InterrogationScreen({
   const hasResponse = subtitlePhonetic !== null;
 
   useEffect(() => {
+    setIsConnected(true);
+    setTimeout(() => inputRef.current?.focus(), 80);
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -747,11 +726,6 @@ function InterrogationScreen({
     }
     return () => { if (vizInterval) clearInterval(vizInterval); };
   }, [isPlaying]);
-
-  function handleActivate() {
-    setIsConnected(true);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }
 
   async function handleSendText(e: React.FormEvent) {
     e.preventDefault();
@@ -836,67 +810,46 @@ function InterrogationScreen({
 
       {/* ── Center Stage ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "20px 40px" }}>
-        {!isConnected ? (
-          <button
-            onClick={handleActivate}
-            style={{
-              background: "#F0EAD6",
-              color: "#121212",
-              border: "4px solid #F0EAD6",
-              fontFamily: "'Rubik Mono One', monospace",
-              fontSize: "clamp(1.2rem, 2.5vw, 1.8rem)",
-              letterSpacing: "0.14em",
-              padding: "32px 60px",
-              cursor: "pointer",
-              textTransform: "uppercase",
-            }}
-          >
-            [ ESTABLISH TEXT UPLINK ]
-          </button>
-        ) : (
-          <>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>
-              / / ACOUSTIC FREQUENCY MONITOR / /
-            </div>
-            {/* Visualizer bars — flat when silent, animated when playing */}
-            <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(60px, 16vh, 130px)" }}>
-              {vizBars.map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: "11px",
-                    background: isPlaying ? "#F0EAD6" : "#F0EAD620",
-                    height: isPlaying ? `${Math.max(6, (h / 7) * 100)}%` : "3px",
-                    transition: isPlaying ? "none" : "height 0.6s ease, background 0.5s",
-                  }}
-                />
-              ))}
-            </div>
-            {/* ASCII frequency readout */}
-            <div style={{
-              fontFamily: "'VT323', monospace",
-              fontSize: "clamp(0.85rem, 1.6vw, 1.1rem)",
-              letterSpacing: "0.04em",
-              userSelect: "none",
-              textAlign: "center",
-              transition: "color 0.4s",
-              color: isPlaying ? "#F0EAD680" : "#F0EAD618",
-            }}>
-              {isPlaying
-                ? vizBars.map((h) => ["▁","▂","▃","▄","▅","▆","▇","█"][Math.min(h, 7)]).join("")
-                : SILENT_LINE}
-            </div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "4px" }}>
-              {isPlaying ? "— ENTITY TRANSMITTING —" : isWaiting ? "— DECRYPTING FREQUENCY —" : "— SIGNAL INACTIVE —"}
-            </div>
-          </>
-        )}
+        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>
+          / / ACOUSTIC FREQUENCY MONITOR / /
+        </div>
+        {/* Visualizer bars — flat when silent, animated when playing */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(60px, 16vh, 130px)" }}>
+          {vizBars.map((h, i) => (
+            <div
+              key={i}
+              style={{
+                width: "11px",
+                background: isPlaying ? "#F0EAD6" : "#F0EAD620",
+                height: isPlaying ? `${Math.max(6, (h / 7) * 100)}%` : "3px",
+                transition: isPlaying ? "none" : "height 0.6s ease, background 0.5s",
+              }}
+            />
+          ))}
+        </div>
+        {/* ASCII frequency readout */}
+        <div style={{
+          fontFamily: "'VT323', monospace",
+          fontSize: "clamp(0.85rem, 1.6vw, 1.1rem)",
+          letterSpacing: "0.04em",
+          userSelect: "none",
+          textAlign: "center",
+          transition: "color 0.4s",
+          color: isPlaying ? "#F0EAD680" : "#F0EAD618",
+        }}>
+          {isPlaying
+            ? vizBars.map((h) => ["▁","▂","▃","▄","▅","▆","▇","█"][Math.min(h, 7)]).join("")
+            : SILENT_LINE}
+        </div>
+        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "4px" }}>
+          {isPlaying ? "— ENTITY TRANSMITTING —" : isWaiting ? "— DECRYPTING FREQUENCY —" : "— SIGNAL INACTIVE —"}
+        </div>
       </div>
 
       {/* ── Subtitle Engine ── */}
       <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px" }}>
-        {!isConnected || (!hasResponse && !isWaiting) ? (
-          /* Blinking cursor — shown before connection or before first response */
+        {!hasResponse && !isWaiting ? (
+          /* Blinking cursor — shown before first response */
           <div style={{
             fontFamily: "'VT323', monospace",
             fontSize: "1.4rem",
