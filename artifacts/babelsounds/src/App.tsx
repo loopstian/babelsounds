@@ -703,6 +703,7 @@ function InterrogationScreen({
   const [subtitleEnglish, setSubtitleEnglish] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<string | null>(null);
   const [waitPhase, setWaitPhase] = useState(0);
+  const [chatHistory, setChatHistory] = useState<{ role: "user" | "assistant"; message: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasResponse = subtitlePhonetic !== null;
@@ -752,9 +753,15 @@ function InterrogationScreen({
     e.preventDefault();
     if (!input.trim() || !isConnected || isWaiting) return;
     const message = input.trim();
+
+    // Capture history snapshot before the state update (last 6 exchanges = 12 items)
+    const historySnapshot = chatHistory.slice(-12);
+
     setInput("");
     setTelemetry(null);
     setIsWaiting(true);
+    // Optimistically append user turn so it's visible immediately
+    setChatHistory((prev) => [...prev, { role: "user" as const, message }]);
 
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}api/interrogate`, {
@@ -767,6 +774,7 @@ function InterrogationScreen({
           languageName: agentConfig.languageName,
           systemPrompt: agentConfig.systemPrompt,
           phoneticRules: agentConfig.phoneticRules,
+          history: historySnapshot,
         }),
       });
 
@@ -781,6 +789,9 @@ function InterrogationScreen({
         audioBase64: string | null;
         telemetry?: string | null;
       };
+
+      // Append assistant turn to history
+      setChatHistory((prev) => [...prev, { role: "assistant" as const, message: data.english }]);
 
       // Set telemetry flash (null clears any previous fragment)
       setTelemetry(data.telemetry ?? null);

@@ -191,14 +191,28 @@ async function synthesizeTTS(
 
 // ── Route ──────────────────────────────────────────────────────────────────────
 
+interface ChatEntry {
+  role: "user" | "assistant";
+  message: string;
+}
+
+function buildHistoryBlock(history: ChatEntry[]): string {
+  if (!history.length) return "";
+  const log = history
+    .map((h) => `${h.role === "user" ? "HUMAN" : "ENTITY"}: ${h.message}`)
+    .join("\n");
+  return `[CONVERSATION HISTORY]:\n${log}\n${"─".repeat(40)}\n`;
+}
+
 router.post("/interrogate", async (req, res) => {
-  const { agentId, voiceId, userMessage, languageName, systemPrompt, phoneticRules } = req.body as {
+  const { agentId, voiceId, userMessage, languageName, systemPrompt, phoneticRules, history } = req.body as {
     agentId?: string;
     voiceId?: string;
     userMessage?: string;
     languageName?: string;
     systemPrompt?: string;
     phoneticRules?: string;
+    history?: ChatEntry[];
   };
 
   if (!agentId?.trim() || !voiceId?.trim() || !userMessage?.trim()) {
@@ -228,12 +242,17 @@ router.post("/interrogate", async (req, res) => {
     let messageToSend: string;
     let memoryFragment: string | null = null;
 
+    // Sanitise and cap the frontend conversation history to the last 6 exchanges (12 items)
+    const safeHistory: ChatEntry[] = Array.isArray(history) ? history.slice(-12) : [];
+    const historyBlock = buildHistoryBlock(safeHistory);
+
     // ── Step 2: RAG Pipeline (SEARCH branch) ──────────────────────────────────
     if (gate.action === "SEARCH" && gate.query && firecrawlKey) {
       memoryFragment = await fetchMemoryFragment(firecrawlKey, genAI, gate.query, languageName || "this culture");
 
       if (memoryFragment) {
         messageToSend =
+          historyBlock +
           `[SYSTEM OVERRIDE]: You just recovered an ancient memory. Use these facts to answer the user: "${memoryFragment}".\n` +
           `[USER ASKS]: "${userMessage}"\n` +
           `[CRITICAL INSTRUCTION]: Answer using the facts, but stay completely in your ancient, cryptic persona. Do not mention "archives", "web", or "search". You must output ONLY valid JSON in this format: { "phonetic": "...", "english": "..." }`;
@@ -241,10 +260,15 @@ router.post("/interrogate", async (req, res) => {
       } else {
         // Firecrawl failed or empty — fall back to plain TALK
         console.warn("[RAG] No memory fragment retrieved — falling back to TALK");
-        messageToSend = userMessage;
+        messageToSend = historyBlock
+          ? `${historyBlock}[NEW HUMAN INPUT]: "${userMessage}"\n[SYSTEM INSTRUCTION]: Use the history for context. Answer the new input in your ancient persona. Return JSON: { "phonetic": "...", "english": "..." }.`
+          : userMessage;
       }
     } else {
-      messageToSend = userMessage;
+      // TALK branch — inject history context when available
+      messageToSend = historyBlock
+        ? `${historyBlock}[NEW HUMAN INPUT]: "${userMessage}"\n[SYSTEM INSTRUCTION]: Use the history for context. Answer the new input in your ancient persona. Return JSON: { "phonetic": "...", "english": "..." }.`
+        : userMessage;
     }
 
     // ── Step 3: Entity Response via Gemini Chat ────────────────────────────────
