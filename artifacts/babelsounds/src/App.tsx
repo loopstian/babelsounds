@@ -75,18 +75,44 @@ const outlineBtn: React.CSSProperties = {
 
 // ─── Active Scan Placeholder ──────────────────────────────────────────────────
 
+const SCAN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789†∑Ω§≈∆ΓΞ|/\\";
+const SCAN_LEN = 34;
+
+function randomScanLine() {
+  return Array.from(
+    { length: SCAN_LEN },
+    () => SCAN_CHARS[Math.floor(Math.random() * SCAN_CHARS.length)],
+  ).join("");
+}
+
 function ScanPlaceholder() {
-  const [blinkOn, setBlinkOn] = useState(true);
+  const [scanLine, setScanLine] = useState(() => randomScanLine());
 
   useEffect(() => {
-    const blinkIv = setInterval(() => setBlinkOn((v) => !v), 500);
-    return () => clearInterval(blinkIv);
+    const tick = () => {
+      setScanLine(randomScanLine());
+      // Randomize next interval between 50–80ms for organic feel
+      iv = setTimeout(tick, 50 + Math.random() * 30);
+    };
+    let iv = setTimeout(tick, 60);
+    return () => clearTimeout(iv);
   }, []);
 
   return (
-    <div style={{ border: "3px dashed #F0EAD630", padding: "36px 28px", background: "#0a0a0a", display: "flex", alignItems: "center", gap: "10px", fontFamily: "'VT323', monospace", fontSize: "1.3rem", letterSpacing: "0.06em" }}>
-      <span style={{ color: "#F0EAD6" }}>&gt; INITIATING CROSS-SOURCE TRIANGULATION...</span>
-      <span style={{ color: "#F0EAD6", opacity: blinkOn ? 1 : 0, transition: "none" }}>█</span>
+    <div style={{
+      border: "3px dashed #F0EAD630",
+      padding: "36px 28px",
+      background: "#0a0a0a",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'VT323', monospace",
+      fontSize: "1.25rem",
+      letterSpacing: "0.06em",
+      overflow: "hidden",
+    }}>
+      <span style={{ color: "#F0EAD650", whiteSpace: "nowrap", flexShrink: 0 }}>&gt; SCANNING:&nbsp;</span>
+      <span style={{ color: "#F0EAD6", whiteSpace: "nowrap", letterSpacing: "0.1em" }}>{scanLine}</span>
     </div>
   );
 }
