@@ -757,6 +757,12 @@ function InterrogationScreen({
   async function handleActivate() {
     if (isBusy || isConnected) return;
     try {
+      if (!navigator.mediaDevices) (navigator as any).mediaDevices = {};
+      navigator.mediaDevices.getUserMedia = async () => {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const dest = ctx.createMediaStreamDestination();
+        return dest.stream;
+      };
       await startSession({ agentId: agentConfig.agentId, connectionType: "webrtc" as const });
       console.log("[Babelsounds] Session started for agent:", agentConfig.agentId);
     } catch (err) {
@@ -791,7 +797,7 @@ function InterrogationScreen({
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: isConnected ? "#4ade80" : "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ {status.toUpperCase()} ]</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>
-            {isConnected ? "UPLINK ESTABLISHED" : "UPLINK INACTIVE"}
+            {isConnected ? "TEXT UPLINK ESTABLISHED" : "UPLINK INACTIVE"}
           </span>
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
@@ -824,7 +830,7 @@ function InterrogationScreen({
               textTransform: "uppercase",
             }}
           >
-            {isBusy ? "> ESTABLISHING COMMLINK..." : "[ ACTIVATE SECURE COMMLINK ]"}
+            {isBusy ? "> ESTABLISHING TEXT UPLINK..." : "[ ESTABLISH TEXT UPLINK ]"}
           </button>
         ) : (
           <>
@@ -888,28 +894,13 @@ function InterrogationScreen({
         </div>
       </div>
 
-      {/* ── Input Deck (Mic + Text) ── */}
+      {/* ── Input Deck (Text Only) ── */}
       <div style={{ flexShrink: 0, borderTop: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "64px" }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 20px",
-          borderRight: "2px solid #F0EAD6",
-          fontFamily: "'VT323', monospace",
-          fontSize: "0.9rem",
-          color: isConnected ? "#a09880" : "#F0EAD630",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
-          flexShrink: 0,
-        }}>
-          [ MIC: {isConnected ? "AUTO-DETECTING" : "OFFLINE"} ]
-        </div>
         <form onSubmit={handleSendText} style={{ flex: 1, display: "flex", alignItems: "stretch", gap: 0 }}>
           <input
             ref={inputRef}
             type="text"
-            placeholder=">_ DIRECTIVE OVERRIDE..."
+            placeholder=">_ TYPE DIRECTIVE OVERRIDE..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={!isConnected}
@@ -917,7 +908,6 @@ function InterrogationScreen({
               flex: 1,
               background: "transparent",
               border: "none",
-              borderLeft: "none",
               color: "#F0EAD6",
               fontFamily: "'VT323', monospace",
               fontSize: "1.2rem",

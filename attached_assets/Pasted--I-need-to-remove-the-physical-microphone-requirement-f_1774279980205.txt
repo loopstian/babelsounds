@@ -1,0 +1,27 @@
+"I need to remove the physical microphone requirement for the ElevenLabs Agent in **Screen 3 (The Interrogation Terminal)** so we can communicate with it purely via text. The WebRTC connection fails if it can't find a mic, so we will mock a silent audio stream to bypass this.
+
+**1. The 'Ghost Mic' Hack (Bypassing getUserMedia):**
+- Inside the `handleConnect` function (the function triggered by the 'ACTIVATE SECURE COMMLINK' button), before calling `startSession`, we need to mock the browser's microphone API to return a silent stream.
+- Insert this code block right before `await startSession({ agentId })`:
+  ```javascript
+  // Hack to bypass hardware mic requirement for text-only mode
+  if (!navigator.mediaDevices) navigator.mediaDevices = {};
+  navigator.mediaDevices.getUserMedia = async () => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = ctx.createMediaStreamDestination();
+    // Return a silent media stream so WebRTC connects successfully
+    return dest.stream;
+  };
+  ```
+
+**2. Update the Screen 3 UI (Remove Mic Visuals):**
+- Change the main connection button text from `[ ACTIVATE SECURE COMMLINK ]` to `[ ESTABLISH TEXT UPLINK ]`.
+- Remove the `[ MIC: AUTO-DETECTING ]` or `[ HOLD TO SPEAK ]` visual elements from the bottom input deck entirely.
+- The bottom input deck should now ONLY be the text form. 
+- Make the text input field take up the full width (flex-1) next to the `[ TRANSMIT ]` button. Placeholder: `>_ TYPE DIRECTIVE OVERRIDE...`
+
+**3. Ensure Text Transmission Works:**
+- Ensure the `<form>` `onSubmit` handler prevents default, takes the text input value, and calls the SDK's text method (e.g., `conversation.setVolume(0)` if you need to mute the fake mic, and `conversation.sendMessage({ text: inputValue })` or however the specific SDK version expects text input).
+- Clear the input field after sending.
+
+**Please apply this hardware bypass so the ElevenLabs connection opens successfully and the user can communicate purely by typing.**"
