@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Play, Square } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -393,17 +394,45 @@ function RecordingScreen({
   const [isInitializing, setIsInitializing] = useState(false);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [cursorOn, setCursorOn] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  function buildAudio(): HTMLAudioElement | null {
+    if (!voiceSynthResult?.audioBase64) return null;
+    const audio = new Audio(`data:audio/mpeg;base64,${voiceSynthResult.audioBase64}`);
+    audio.volume = 0.9;
+    audio.onplay = () => setIsPlaying(true);
+    audio.onpause = () => setIsPlaying(false);
+    audio.onended = () => setIsPlaying(false);
+    audioRef.current = audio;
+    return audio;
+  }
 
   useEffect(() => {
     if (!voiceSynthResult?.audioBase64) return;
     try {
-      const audio = new Audio(`data:audio/mpeg;base64,${voiceSynthResult.audioBase64}`);
-      audio.volume = 0.9;
-      audio.play().catch((err) => console.warn("[Babelsounds] Audio autoplay blocked:", err));
+      const audio = buildAudio();
+      audio?.play().catch((err) => console.warn("[Babelsounds] Audio autoplay blocked:", err));
     } catch (err) {
       console.error("[Babelsounds] Audio init error:", err);
     }
   }, []);
+
+  function handleTogglePlay() {
+    try {
+      if (!audioRef.current) buildAudio();
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (isPlaying) {
+        audio.pause();
+        audio.currentTime = 0;
+      } else {
+        audio.play().catch((err) => console.warn("[Babelsounds] Manual play blocked:", err));
+      }
+    } catch (err) {
+      console.error("[Babelsounds] Toggle play error:", err);
+    }
+  }
 
   const BOOT_SEQUENCE = [
     "> VALIDATING VOCAL PARAMETERS...",
@@ -523,6 +552,41 @@ function RecordingScreen({
               rows={3}
               style={taStyle}
             />
+
+            {/* Vocal Profile Player */}
+            {voiceSynthResult?.audioBase64 && (
+              <button
+                onClick={handleTogglePlay}
+                style={{
+                  marginTop: "10px",
+                  width: "100%",
+                  background: isPlaying ? "#F0EAD608" : "#0a0a0a",
+                  border: "1px solid #F0EAD630",
+                  color: "#F0EAD6",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontFamily: "'VT323', monospace",
+                  letterSpacing: "0.1em",
+                  transition: "background 0.15s",
+                }}
+              >
+                {isPlaying
+                  ? <Square size={13} strokeWidth={2.5} style={{ flexShrink: 0, opacity: 0.7 }} />
+                  : <Play size={13} strokeWidth={2.5} style={{ flexShrink: 0, opacity: 0.7 }} />
+                }
+                <span style={{ fontSize: "1rem", flex: 1, textAlign: "left", color: isPlaying ? "#F0EAD6" : "#a09880" }}>
+                  [ VOCAL PROFILE PREVIEW ]
+                </span>
+                {isPlaying && (
+                  <span className="telemetry-flicker" style={{ fontSize: "0.9rem", color: "#a09880", letterSpacing: "0.06em" }}>
+                    PLAYING...
+                  </span>
+                )}
+              </button>
+            )}
           </div>
 
           <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />

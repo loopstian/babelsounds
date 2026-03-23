@@ -64,10 +64,11 @@ router.post("/synthesize-voice", async (req, res) => {
 
     const preview = result.previews[0];
     console.log(`[synthesize-voice] Voice generated successfully: ${preview.generated_voice_id}`);
+    console.log(`[synthesize-voice] audio_base_64 length: ${preview.audio_base_64?.length ?? "MISSING"}`);
 
     res.json({
       voiceId: preview.generated_voice_id,
-      audioBase64: preview.audio_sample,
+      audioBase64: preview.audio_base_64,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
