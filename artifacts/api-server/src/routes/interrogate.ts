@@ -88,7 +88,15 @@ async function fetchMemoryFragment(
 
     // ── Firecrawl raw result log ───────────────────────────────────────────────
     console.log(
-      `\n=== FIRECRAWL RAW RESULT ===\n${markdown.substring(0, 500)}...\n============================\n`,
+      `\n${"=".repeat(52)}\n` +
+      `=== [!] ANCIENT MEMORY RECOVERY: FIRECRAWL DATA ===\n` +
+      `${"=".repeat(52)}\n` +
+      `QUERY: ${query}\n` +
+      `${"─".repeat(52)}\n` +
+      `${markdown.substring(0, 1500)}${markdown.length > 1500 ? "..." : ""}\n` +
+      `${"=".repeat(52)}\n` +
+      `=== [!] END OF RECOVERED DATA ===\n` +
+      `${"=".repeat(52)}\n`,
     );
 
     const truncated = markdown.length > 8000 ? markdown.slice(0, 8000) + "\n[TRUNCATED]" : markdown;
