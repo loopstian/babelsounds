@@ -14,13 +14,13 @@ if (!process.env.ELEVEN_SECRET) {
 router.post("/synthesize-voice", async (req, res) => {
   console.log("[synthesize-voice] Synthesize Request Received:", req.body);
 
-  const { vocalBlueprint, firstMessage } = req.body as {
+  const { vocalBlueprint, phoneticFirstMessage } = req.body as {
     vocalBlueprint?: string;
-    firstMessage?: string;
+    phoneticFirstMessage?: string;
   };
 
-  if (!vocalBlueprint?.trim() || !firstMessage?.trim()) {
-    res.status(400).json({ error: "vocalBlueprint and firstMessage are required and must not be empty" });
+  if (!vocalBlueprint?.trim() || !phoneticFirstMessage?.trim()) {
+    res.status(400).json({ error: "vocalBlueprint and phoneticFirstMessage are required and must not be empty" });
     return;
   }
 
@@ -30,7 +30,7 @@ router.post("/synthesize-voice", async (req, res) => {
     return;
   }
 
-  let synthesisText = firstMessage.trim();
+  let synthesisText = phoneticFirstMessage.trim();
   const originalLen = synthesisText.length;
 
   if (synthesisText.length > MAX_SYNTHESIS_CHARS) {

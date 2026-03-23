@@ -63,9 +63,9 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
     1. **Query generation**: Gemini `gemini-2.5-flash-lite` generates 3 site-specific search queries (Wikipedia, PHOIBLE, Wiktionary)
     2. **Web scraping**: Firecrawl SDK scrapes all 3 sites in parallel via `Promise.all`
     3. **Synthesis**: Gemini `gemini-2.5-flash` (full model) synthesizes scraped data into a structured Language Signal JSON with schema validation
-    - Returns `{ signal: LanguageSignal }` — a complete language dossier with name, matchScore, lexiconSample, phoneticInventory, acousticConsensus, culturalContext, vocalBlueprint, typingGuide, systemPrompt, firstMessage, and grounded source URLs
+    - Returns `{ signal: LanguageSignal }` — a complete language dossier with name, matchScore, lexiconSample, phoneticInventory, acousticConsensus, culturalContext, vocalBlueprint, typingGuide, systemPrompt, englishFirstMessage (lore-heavy English greeting), phoneticFirstMessage (1:1 phonetic translation using native tongue rules), and grounded source URLs
   - `src/routes/synthesize-voice.ts` — `POST /api/synthesize-voice` — ElevenLabs Voice Design integration:
-    - Receives `vocalBlueprint` + `firstMessage` from request body
+    - Receives `vocalBlueprint` + `phoneticFirstMessage` from request body — phonetic text is what gets spoken by the voice
     - Uses ElevenLabs SDK `client.textToVoice.createPreviews()` to generate a voice preview
     - Returns `{ voiceId: string, audioBase64: string }` — base64-encoded MP3 + generated voice ID
 - Depends on: `@workspace/db`, `@workspace/api-zod`, `@google/generative-ai`, `@mendable/firecrawl-js`, `elevenlabs`

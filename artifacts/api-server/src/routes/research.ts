@@ -31,7 +31,8 @@ You must output a single, valid JSON object following this exact schema:
   "typingGuide": "Short rules for the user: Use k, q, avoid f...",
   "sources": ["url1", "url2", ...],
   "systemPrompt": "A rich character prompt for the AI voice entity — an ancient being trapped in a digital terminal. Include how it addresses the user, its personality, its relationship to the language and mythology. Never break character.",
-  "firstMessage": "The entity's opening line when the user first enters the interrogation room — cryptic, atmospheric, in-character."
+  "englishFirstMessage": "The entity's opening line (2-3 sentences) when the user first enters the interrogation room — cryptic, lore-heavy, atmospheric, in-character. Written in ENGLISH.",
+  "phoneticFirstMessage": "A 1:1 phonetic translation of the englishFirstMessage using ONLY the sounds, phonemes, and rules from the typingGuide and phoneticInventory. It must match the approximate syllable count and rhythm of the English version. Use ONLY the IPA symbols and native script sounds available in the language. This is what the voice entity will actually SPEAK."
 }
 
 Only use facts found in the provided text. If PHOIBLE data is missing, use your internal knowledge to provide a highly probable phonetic inventory for that specific language. Return ONLY the raw JSON.`;
@@ -140,7 +141,7 @@ Analyze the above scraped data and produce the Language Signal JSON.`;
 
     const languageSignal = JSON.parse(synthesisText);
 
-    const requiredFields = ["id", "name", "matchScore", "lexiconSample", "phoneticInventory", "acousticConsensus", "culturalContext", "vocalBlueprint", "typingGuide", "systemPrompt", "firstMessage"];
+    const requiredFields = ["id", "name", "matchScore", "lexiconSample", "phoneticInventory", "acousticConsensus", "culturalContext", "vocalBlueprint", "typingGuide", "systemPrompt", "englishFirstMessage", "phoneticFirstMessage"];
     for (const field of requiredFields) {
       if (!(field in languageSignal)) {
         throw new Error(`Synthesis output missing required field: ${field}`);

@@ -22,7 +22,8 @@ interface LanguageSignal {
   phoneticInventory: string[];
   vocalBlueprint: string;
   systemPrompt: string;
-  firstMessage: string;
+  englishFirstMessage: string;
+  phoneticFirstMessage: string;
   typingGuide: string;
   sources: string[];
 }
@@ -30,7 +31,8 @@ interface LanguageSignal {
 interface AgentConfig {
   vocalBlueprint: string;
   systemPrompt: string;
-  firstMessage: string;
+  phoneticFirstMessage: string;
+  englishFirstMessage: string;
 }
 
 interface VoiceSynthResult {
@@ -390,7 +392,7 @@ function RecordingScreen({
 }) {
   const [vocalBlueprint, setVocalBlueprint] = useState(language.vocalBlueprint);
   const [systemPrompt, setSystemPrompt] = useState(language.systemPrompt);
-  const [firstMessage, setFirstMessage] = useState(language.firstMessage);
+  const [phoneticFirstMessage, setPhoneticFirstMessage] = useState(language.phoneticFirstMessage);
   const [isInitializing, setIsInitializing] = useState(false);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [cursorOn, setCursorOn] = useState(true);
@@ -457,7 +459,7 @@ function RecordingScreen({
       timers.push(setTimeout(() => setBootLines((prev) => [...prev, line]), i * 260));
     });
     timers.push(setTimeout(() => {
-      onProceed({ vocalBlueprint, systemPrompt, firstMessage });
+      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage });
     }, BOOT_SEQUENCE.length * 260 + 400));
     return () => timers.forEach(clearTimeout);
   }
@@ -605,16 +607,43 @@ function RecordingScreen({
 
           <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />
 
-          {/* Box 3: Initialization Protocol (First Message) */}
+          {/* Box 3: The Script — Phonetic First Message */}
           <div style={{ marginBottom: "28px" }}>
-            <label style={labelStyle}>Initialization Protocol — First Message</label>
-            <span style={subtitleStyle}>The entity's opening transmission when the connection is established.</span>
+            <label style={labelStyle}>The Script — What The Entity Will Speak</label>
+            <span style={subtitleStyle}>Phonetic vocalization in the native tongue. This is what the AI will actually say aloud.</span>
             <textarea
-              value={firstMessage}
-              onChange={(e) => setFirstMessage(e.target.value)}
-              rows={2}
+              value={phoneticFirstMessage}
+              onChange={(e) => setPhoneticFirstMessage(e.target.value)}
+              rows={3}
               style={taStyle}
             />
+            <div style={{
+              marginTop: "10px",
+              padding: "10px 14px",
+              border: "1px solid #F0EAD618",
+              background: "#0a0a0a",
+            }}>
+              <span style={{
+                fontFamily: "'VT323', monospace",
+                fontSize: "0.75rem",
+                color: "#a09880",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                display: "block",
+                marginBottom: "4px",
+              }}>
+                Subtitles [English Translation]:
+              </span>
+              <span style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "0.95rem",
+                color: "#F0EAD680",
+                lineHeight: 1.5,
+                fontStyle: "italic",
+              }}>
+                {language.englishFirstMessage}
+              </span>
+            </div>
           </div>
 
           <div style={{ borderTop: "1px solid #F0EAD618", marginBottom: "28px" }} />
@@ -689,8 +718,8 @@ function InterrogationScreen({
   const [blinkOn, setBlinkOn] = useState(true);
   const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 1));
   const [subtitles, setSubtitles] = useState<{ phonetic: string; english: string }>({
-    phonetic: "> \"...\"",
-    english: agentConfig.firstMessage.toUpperCase(),
+    phonetic: `> "${agentConfig.phoneticFirstMessage}"`,
+    english: agentConfig.englishFirstMessage.toUpperCase(),
   });
   const [exchangeIdx, setExchangeIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1015,7 +1044,7 @@ export default function App() {
       const res = await fetch(`${import.meta.env.BASE_URL}api/synthesize-voice`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vocalBlueprint: sig.vocalBlueprint, firstMessage: sig.firstMessage }),
+        body: JSON.stringify({ vocalBlueprint: sig.vocalBlueprint, phoneticFirstMessage: sig.phoneticFirstMessage }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
