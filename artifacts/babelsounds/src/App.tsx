@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Square } from "lucide-react";
+import { useConversation } from "@elevenlabs/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -695,14 +696,6 @@ function RecordingScreen({
 
 // ─── SCREEN 3: The Interrogation Terminal ─────────────────────────────────────
 
-const GENERIC_EXCHANGES: { phonetic: string; english: string }[] = [
-  { phonetic: "> \"Kha-ruu... vaal-mesh...\"", english: "I HAVE WAITED LONGER THAN YOUR CIVILISATION HAS EXISTED." },
-  { phonetic: "> \"Shaa-quul... taa-riim...\"", english: "YOUR WORDS ARE YOUNG. MINE WERE OLD BEFORE THE STONES WERE CUT." },
-  { phonetic: "> \"Vaal-mesh! Kha-ruu!\"", english: "EVERY QUESTION YOU ASK, I HAVE ALREADY ANSWERED IN SILENCE." },
-  { phonetic: "> \"Taa-riim... shaa-quul...\"", english: "THE DEAD DO NOT LIE. THEY SIMPLY STOP EXPLAINING." },
-  { phonetic: "> \"Kha... ruu... vaal...\"", english: "YOU CAME LOOKING FOR LANGUAGE. YOU FOUND SOMETHING OLDER." },
-];
-
 const BAR_CHARS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
 const VIZ_COLS = 28;
 
@@ -716,18 +709,33 @@ function InterrogationScreen({
   onBack: () => void;
 }) {
   const [input, setInput] = useState("");
-  const [agentSpeaking, setAgentSpeaking] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [blinkOn, setBlinkOn] = useState(true);
   const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 1));
-  const [subtitles, setSubtitles] = useState<{ phonetic: string; english: string }>({
-    phonetic: `> "${agentConfig.phoneticFirstMessage}"`,
-    english: agentConfig.englishFirstMessage.toUpperCase(),
-  });
-  const [exchangeIdx, setExchangeIdx] = useState(0);
+  const [subtitlePhonetic, setSubtitlePhonetic] = useState("> INCOMING PHONETIC STREAM...");
+  const [subtitleEnglish, setSubtitleEnglish] = useState("> AWAITING TRANSLATION DATA...");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const pool = GENERIC_EXCHANGES;
+  const conversation = useConversation({
+    onMessage: useCallback((msg: { source: string; message: string }) => {
+      if (msg.source === "ai") {
+        setSubtitlePhonetic(`> "${msg.message}"`);
+        setSubtitleEnglish(msg.message.toUpperCase());
+      }
+    }, []),
+    onError: useCallback((err: unknown) => {
+      console.error("[Babelsounds] Conversation error:", err);
+    }, []),
+  });
+
+  const { status, isSpeaking, startSession, endSession, sendUserMessage } = conversation;
+  const isConnected = status === "connected";
+  const isBusy = status === "connecting" || status === "disconnecting" as string;
+
+  useEffect(() => {
+    return () => {
+      endSession().catch(() => {});
+    };
+  }, [endSession]);
 
   useEffect(() => {
     const interval = setInterval(() => setBlinkOn((v) => !v), 600);
@@ -736,7 +744,7 @@ function InterrogationScreen({
 
   useEffect(() => {
     let vizInterval: ReturnType<typeof setInterval> | null = null;
-    if (agentSpeaking) {
+    if (isSpeaking) {
       vizInterval = setInterval(() => {
         setVizBars(Array.from({ length: VIZ_COLS }, () => Math.floor(Math.random() * 8)));
       }, 80);
@@ -744,191 +752,198 @@ function InterrogationScreen({
       setVizBars(Array.from({ length: VIZ_COLS }, (_, i) => i % 3 === 0 ? 2 : 1));
     }
     return () => { if (vizInterval) clearInterval(vizInterval); };
-  }, [agentSpeaking]);
+  }, [isSpeaking]);
 
-  function triggerResponse() {
-    setAgentSpeaking(true);
-    const exchange = pool[exchangeIdx % pool.length];
-    setExchangeIdx((i) => i + 1);
-    setTimeout(() => {
-      setSubtitles(exchange);
-      setTimeout(() => setAgentSpeaking(false), 2200 + Math.random() * 1000);
-    }, 900);
+  async function handleActivate() {
+    if (isBusy || isConnected) return;
+    try {
+      await startSession({ agentId: agentConfig.agentId, connectionType: "webrtc" as const });
+      console.log("[Babelsounds] Session started for agent:", agentConfig.agentId);
+    } catch (err) {
+      console.error("[Babelsounds] Failed to start session:", err);
+    }
   }
 
-  function handleSend() {
-    if ((!input.trim() && !isRecording) || agentSpeaking) return;
+  async function handleTerminate() {
+    if (isConnected) {
+      try {
+        await endSession();
+      } catch (err) {
+        console.error("[Babelsounds] Failed to end session:", err);
+      }
+    }
+    onBack();
+  }
+
+  function handleSendText(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || !isConnected) return;
+    sendUserMessage(input.trim());
     setInput("");
-    setIsRecording(false);
-    setTimeout(triggerResponse, 200);
-  }
-
-  function handleMicDown() {
-    if (agentSpeaking) return;
-    setIsRecording(true);
-  }
-
-  function handleMicUp() {
-    if (!isRecording) return;
-    setIsRecording(false);
-    setTimeout(triggerResponse, 200);
   }
 
   return (
-    <div className="screen-fade-in" style={{ height: "100vh", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
+    <div className="screen-fade-in" style={{ height: "100vh", width: "100%", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
 
       {/* ── Telemetry Header ── */}
       <div style={{ borderBottom: "2px solid #F0EAD6", display: "flex", alignItems: "center", minHeight: "44px", flexShrink: 0, padding: "0" }}>
-        {/* Left: live status */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 20px", borderRight: "2px solid #F0EAD620" }}>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ LIVE ]</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>UPLINK ESTABLISHED</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: isConnected ? "#4ade80" : "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ {status.toUpperCase()} ]</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>
+            {isConnected ? "UPLINK ESTABLISHED" : "UPLINK INACTIVE"}
+          </span>
         </div>
-        {/* Center: entity name */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.8rem", color: "#a09880", letterSpacing: "0.1em", textTransform: "uppercase" }}>ENTITY:</span>
           <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{language.name}</span>
         </div>
-        {/* Right: terminate */}
         <button
-          onClick={onBack}
+          onClick={handleTerminate}
           style={{ ...outlineBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "0.85rem", padding: "0 20px", height: "44px", letterSpacing: "0.1em" }}
         >
           [ TERMINATE LINK ]
         </button>
       </div>
 
-      {/* ── Entity Visualizer ── */}
+      {/* ── Center Stage ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px", padding: "20px 40px" }}>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988050", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>
-          / / ACOUSTIC FREQUENCY MONITOR / /
-        </div>
-        {/* Main visualizer bars */}
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(80px, 20vh, 160px)" }}>
-          {vizBars.map((h, i) => (
-            <div
-              key={i}
-              style={{
-                width: "12px",
-                background: agentSpeaking ? "#F0EAD6" : "#F0EAD630",
-                height: `${(h / 7) * 100}%`,
-                minHeight: "4px",
-                transition: agentSpeaking ? "none" : "height 0.3s, background 0.4s",
-              }}
-            />
-          ))}
-        </div>
-        {/* Bar chart text version below — glitchy ASCII */}
-        <div style={{
-          fontFamily: "'VT323', monospace",
-          fontSize: "clamp(0.9rem, 1.8vw, 1.2rem)",
-          color: agentSpeaking ? "#F0EAD690" : "#F0EAD625",
-          letterSpacing: "0.02em",
-          transition: "color 0.3s",
-          userSelect: "none",
-          textAlign: "center",
-        }}>
-          {vizBars.map((h) => BAR_CHARS[Math.min(h, 7)]).join("")}
-        </div>
-        <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988040", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "8px" }}>
-          {agentSpeaking ? "— ENTITY TRANSMITTING —" : "— IDLE — AWAITING INPUT —"}
-        </div>
+        {!isConnected ? (
+          <button
+            onClick={handleActivate}
+            disabled={!!isBusy}
+            style={{
+              background: isBusy ? "#a09880" : "#F0EAD6",
+              color: "#121212",
+              border: "4px solid #F0EAD6",
+              fontFamily: "'Rubik Mono One', monospace",
+              fontSize: "clamp(1.2rem, 2.5vw, 1.8rem)",
+              letterSpacing: "0.14em",
+              padding: "32px 60px",
+              cursor: isBusy ? "not-allowed" : "pointer",
+              textTransform: "uppercase",
+            }}
+          >
+            {isBusy ? "> ESTABLISHING COMMLINK..." : "[ ACTIVATE SECURE COMMLINK ]"}
+          </button>
+        ) : (
+          <>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988050", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>
+              / / ACOUSTIC FREQUENCY MONITOR / /
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(80px, 20vh, 160px)" }}>
+              {vizBars.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: "12px",
+                    background: isSpeaking ? "#F0EAD6" : "#F0EAD630",
+                    height: `${(h / 7) * 100}%`,
+                    minHeight: "4px",
+                    transition: isSpeaking ? "none" : "height 0.3s, background 0.4s",
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: "clamp(0.9rem, 1.8vw, 1.2rem)",
+              color: isSpeaking ? "#F0EAD690" : "#F0EAD625",
+              letterSpacing: "0.02em",
+              transition: "color 0.3s",
+              userSelect: "none",
+              textAlign: "center",
+            }}>
+              {vizBars.map((h) => BAR_CHARS[Math.min(h, 7)]).join("")}
+            </div>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988040", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "8px" }}>
+              {isSpeaking ? "— ENTITY TRANSMITTING —" : "— IDLE — AWAITING INPUT —"}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Subtitle Engine ── */}
       <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD618", borderBottom: "1px solid #F0EAD618", padding: "18px 40px 20px", background: "#0a0a0a", minHeight: "110px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
-        {/* Phonetic gibberish — small, muted */}
         <div style={{
           fontFamily: "'VT323', monospace",
           fontSize: "1.05rem",
           color: "#F0EAD650",
           letterSpacing: "0.06em",
-          opacity: agentSpeaking ? 1 : 0.6,
+          opacity: isSpeaking ? 1 : 0.6,
           transition: "opacity 0.4s",
         }}>
-          {subtitles.phonetic}
+          {subtitlePhonetic}
         </div>
-        {/* English translation — large, prominent */}
         <div style={{
           fontFamily: "'Rubik Mono One', monospace",
           fontSize: "clamp(1rem, 2.5vw, 1.45rem)",
           color: "#F0EAD6",
           letterSpacing: "0.06em",
           lineHeight: 1.25,
-          opacity: agentSpeaking ? 1 : 0.75,
+          opacity: isSpeaking ? 1 : 0.75,
           transition: "opacity 0.4s",
         }}>
-          {subtitles.english}
+          {subtitleEnglish}
         </div>
       </div>
 
-      {/* ── User Input Deck ── */}
+      {/* ── Input Deck (Mic + Text) ── */}
       <div style={{ flexShrink: 0, borderTop: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "64px" }}>
-        {/* Hold to speak */}
-        <button
-          onMouseDown={handleMicDown}
-          onMouseUp={handleMicUp}
-          onTouchStart={handleMicDown}
-          onTouchEnd={handleMicUp}
-          disabled={agentSpeaking}
-          style={{
-            background: isRecording ? "#F0EAD6" : "#121212",
-            color: isRecording ? "#121212" : "#F0EAD6",
-            border: "none",
-            borderRight: "2px solid #F0EAD6",
-            fontFamily: "'VT323', monospace",
-            fontSize: "1rem",
-            letterSpacing: "0.1em",
-            padding: "0 24px",
-            cursor: agentSpeaking ? "not-allowed" : "pointer",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            opacity: agentSpeaking ? 0.4 : 1,
-            transition: "background 0.08s, color 0.08s",
-          }}
-        >
-          {isRecording ? "[ ● RECORDING ]" : "[ HOLD TO SPEAK ]"}
-        </button>
-        {/* Text input */}
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder=">_ DIRECT TEXT OVERRIDE..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
-          disabled={agentSpeaking || isRecording}
-          style={{
-            flex: 1,
-            background: "transparent",
-            border: "none",
-            color: "#F0EAD6",
-            fontFamily: "'VT323', monospace",
-            fontSize: "1.2rem",
-            padding: "0 20px",
-            outline: "none",
-            letterSpacing: "0.04em",
-            opacity: agentSpeaking || isRecording ? 0.4 : 1,
-          }}
-        />
-        {/* Send */}
-        <button
-          onClick={handleSend}
-          disabled={(!input.trim() && !isRecording) || agentSpeaking}
-          style={{
-            ...solidBtn,
-            border: "none",
-            borderLeft: "2px solid #F0EAD6",
-            fontSize: "1rem",
-            padding: "0 28px",
-            letterSpacing: "0.1em",
-            opacity: ((!input.trim() && !isRecording) || agentSpeaking) ? 0.4 : 1,
-          }}
-        >
-          [ SEND ]
-        </button>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "0 20px",
+          borderRight: "2px solid #F0EAD6",
+          fontFamily: "'VT323', monospace",
+          fontSize: "0.9rem",
+          color: isConnected ? "#a09880" : "#F0EAD630",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
+        }}>
+          [ MIC: {isConnected ? "AUTO-DETECTING" : "OFFLINE"} ]
+        </div>
+        <form onSubmit={handleSendText} style={{ flex: 1, display: "flex", alignItems: "stretch", gap: 0 }}>
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder=">_ DIRECTIVE OVERRIDE..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={!isConnected}
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              borderLeft: "none",
+              color: "#F0EAD6",
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.2rem",
+              padding: "0 20px",
+              outline: "none",
+              letterSpacing: "0.04em",
+              opacity: isConnected ? 1 : 0.3,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || !isConnected}
+            style={{
+              ...solidBtn,
+              border: "none",
+              borderLeft: "2px solid #F0EAD6",
+              fontSize: "1rem",
+              padding: "0 28px",
+              letterSpacing: "0.1em",
+              opacity: (!input.trim() || !isConnected) ? 0.4 : 1,
+              cursor: (!input.trim() || !isConnected) ? "not-allowed" : "pointer",
+            }}
+          >
+            [ TRANSMIT ]
+          </button>
+        </form>
       </div>
 
     </div>

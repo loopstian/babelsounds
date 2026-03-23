@@ -22,7 +22,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
 │   ├── api-server/         # Express API server
-│   └── babelsounds/        # Babelsounds retro-brutalist AI entity builder (React SPA, no backend)
+│   └── babelsounds/        # Babelsounds retro-brutalist AI entity builder (React SPA + API server backend)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
@@ -112,3 +112,17 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+### `artifacts/babelsounds` (`@workspace/babelsounds`)
+
+Brutalist-themed React SPA for discovering ancient mythological languages and conversing with AI entities. Single-file app (`src/App.tsx`) with 3 screens:
+
+- **Screen 1 — The Archives**: Search for languages via Gemini AI + Firecrawl scraping. Displays language dossiers with phonetic inventories, lexicon samples, cultural context.
+- **Screen 2 — The Forge**: Configure AI voice entity. Plays synthesized voice preview (ElevenLabs Voice Design), editable phonetic greeting, creates a Conversational AI agent.
+- **Screen 3 — The Interrogation Room**: Live two-way conversation with the AI entity via `@elevenlabs/react` `useConversation` hook. WebRTC-based audio with real-time visualizer bars, AI message subtitles, and text override input. Session lifecycle: ACTIVATE → live mic + visualizer → TERMINATE.
+
+Design: Strict brutalist — no border-radius, no gradients. VT323 terminal font, Rubik Mono One headers, Georgia academic serif. `#121212` charcoal bg, `#F0EAD6` cream text, `#a09880` muted, `#8a9ab5` IPA blue-grey.
+
+Key dependencies: `@elevenlabs/react` (v0.14.3) for conversational AI hook, `lucide-react` for icons.
+
+Frontend proxies `/api/*` to api-server on port 8080 via Vite dev config.

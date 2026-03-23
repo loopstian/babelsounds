@@ -1,0 +1,42 @@
+"We are moving to Step 2: Building Screen 3 (The Interrogation Terminal), opening the live audio connection, and adding dual input (Mic + Text) for the ElevenLabs Agent.
+
+**1. Install Dependencies:**
+- Install the official ElevenLabs React SDK: `npm install @elevenlabs/react`.
+
+**2. Update the Screen 2 Handoff:**
+- In Screen 2's `handleInitializeEntity` function, after receiving the `agentId` from the backend, update the global state:
+    - Save the `agentId`.
+    - Change `currentScreen` from `'recording'` to `'interrogation'`.
+
+**3. Build Screen 3 Component (The Interrogation Terminal):**
+- Create a new component that renders when `currentScreen === 'interrogation'`.
+- It should take `agentId`, `selectedLanguage.name`, and `resetApp` (to go back to Screen 1) as props.
+- Use a strict full-screen flex column layout: `h-screen w-full flex flex-col bg-[#121212] text-[#F0EAD6] overflow-hidden`.
+- **The Hook:** Initialize `useConversation` from `@elevenlabs/react`.
+  - Destructure: `status`, `isSpeaking`, `startSession`, `endSession`, and the method to send text messages (usually `conversation.sendMessage` or `sendMessage` depending on the SDK version).
+
+**4. Screen 3 Layout - Top Bar (Telemetry):**
+- A fixed header (`border-b-2 border-[#F0EAD6] p-4 flex justify-between items-center`).
+- **Left:** `[ ● ${status.toUpperCase()} ] UPLINK ESTABLISHED`.
+- **Center:** `ENTITY: ${languageName}`.
+- **Right:** A brutalist button: `[ TERMINATE LINK ]`. When clicked, call `endSession()` and then `resetApp()`.
+
+**5. Screen 3 Layout - Center Stage (The Visualizer):**
+- A large `flex-1 flex items-center justify-center` container.
+- **Disconnected State:** If `status !== 'connected'`, show a massive, inverted-color button: `[ ACTIVATE SECURE COMMLINK ]`. When clicked, call `startSession({ agentId })`. *(This is required to trigger browser mic permissions).*
+- **Connected State:** If `status === 'connected'`, hide the button and show a glitchy ASCII 'Audio Visualizer' (e.g., `|||  ||||  |||`). 
+    - If `isSpeaking` is true, make the ASCII visualizer pulse or change opacity.
+
+**6. Screen 3 Layout - Bottom Panel (Subtitles & Dual Input):**
+- A fixed footer (`border-t-2 border-[#F0EAD6] p-6 flex flex-col gap-4`).
+- **The Subtitles:** Two text lines.
+    - Top line (muted/small): `> INCOMING PHONETIC STREAM...`
+    - Bottom line (large/bold): `> AWAITING TRANSLATION DATA...`
+- **The Input Deck (Mic & Text):** Create a flex row (`flex gap-4 items-center`).
+    - **Mic Status (Left):** A static block `[ MIC: AUTO-DETECTING ]`. (The SDK handles VAD/Voice Activity Detection automatically).
+    - **Text Input (Right/Grow):** A `<form>` taking up the remaining width (`flex-1 flex gap-2`).
+        - An `<input type="text">` styled natively: `bg-transparent border-2 border-[#F0EAD6] p-2 flex-1 outline-none text-[#F0EAD6] placeholder:text-[#F0EAD6]/50`. Placeholder: `>_ DIRECTIVE OVERRIDE...`
+        - A submit button: `[ TRANSMIT ]` (Inverted colors).
+        - **Logic:** `onSubmit`, prevent default, take the input value, pass it to the ElevenLabs text-send method, and clear the input.
+
+**Please enforce the strict brutalist styling (no rounded corners, thick borders, VT323 font). Ensure the user must click 'Activate Secure Commlink' to trigger the connection.**"
