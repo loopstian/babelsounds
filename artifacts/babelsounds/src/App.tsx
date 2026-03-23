@@ -26,6 +26,7 @@ interface LanguageSignal {
   phoneticFirstMessage: string;
   typingGuide: string;
   sources: string[];
+  _cached?: boolean;
 }
 
 interface AgentConfig {
@@ -249,10 +250,29 @@ function LanguageModal({
 
 // ─── SCREEN 1: The Archives ───────────────────────────────────────────────────
 
+const ARCHIVE_KEY = "babelsounds_archive";
+
+function loadFromStorage(): LanguageSignal[] {
+  try {
+    const raw = localStorage.getItem(ARCHIVE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as LanguageSignal[];
+    return parsed.map((s) => ({ ...s, _cached: true }));
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(signals: LanguageSignal[]) {
+  const clean = signals.map(({ _cached: _, ...rest }) => rest);
+  localStorage.setItem(ARCHIVE_KEY, JSON.stringify(clean));
+}
+
 function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: LanguageSignal) => void }) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [languageSignals, setLanguageSignals] = useState<LanguageSignal[]>([]);
+  const [languageSignals, setLanguageSignals] = useState<LanguageSignal[]>(() => loadFromStorage());
+  const [freshIds, setFreshIds] = useState<Set<string>>(() => new Set());
   const [inspecting, setInspecting] = useState<LanguageSignal | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -273,13 +293,28 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
       if (!res.ok) throw new Error(`Research API returned ${res.status}`);
       const data = (await res.json()) as { signal: LanguageSignal };
       console.log("[Babelsounds] Recovered signal:", data.signal);
-      setLanguageSignals((prev) => [data.signal, ...prev]);
+
+      const newSignal: LanguageSignal = { ...data.signal, _cached: false };
+
+      setLanguageSignals((prev) => {
+        const updated = [newSignal, ...prev];
+        saveToStorage(updated);
+        return updated;
+      });
+      setFreshIds((prev) => new Set(prev).add(newSignal.id));
     } catch (err) {
       console.error("[Babelsounds] Search pipeline error:", err);
       setSearchError("Signal recovery failed. Try again.");
     } finally {
       setSearching(false);
     }
+  }
+
+  function handlePurge() {
+    if (!window.confirm("Permanent data deletion. Proceed?")) return;
+    localStorage.removeItem(ARCHIVE_KEY);
+    setLanguageSignals([]);
+    setFreshIds(new Set());
   }
 
   function MatchBar({ value }: { value: number }) {
@@ -342,34 +377,83 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
             )}
 
             <div style={{ marginTop: "40px" }}>
-              {searching ? (
-                <ScanPlaceholder />
-              ) : languageSignals.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", color: "#a09880", letterSpacing: "0.08em", lineHeight: 1.8 }}>
-                    {"> NO SIGNALS DETECTED."}<br />
-                    {"INITIATE SCAN TO RECOVER ANCIENT PHONETICS."}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginBottom: "10px", letterSpacing: "0.06em" }}>
-                    {languageSignals.length} recovered signal{languageSignals.length !== 1 ? "s" : ""} — triangulated from Wikipedia, PHOIBLE, Wiktionary
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 240px 120px", border: "2px solid #F0EAD6", borderBottom: "none", padding: "8px 16px", background: "#F0EAD608", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    <span>Recovered Signal</span><span>Confidence</span><span style={{ textAlign: "right" }}>Dossier</span>
-                  </div>
-                  {languageSignals.map((sig, idx) => (
-                    <div key={sig.id + "-" + idx} style={{ display: "grid", gridTemplateColumns: "1fr 240px 120px", border: "2px solid #F0EAD6", borderBottom: idx === languageSignals.length - 1 ? "2px solid #F0EAD6" : "none", padding: "14px 16px", alignItems: "center", background: "#121212" }}>
-                      <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", letterSpacing: "0.04em" }}>{sig.name}</span>
-                      <span><MatchBar value={sig.matchScore} /></span>
+              {(() => {
+                const freshSignals = languageSignals.filter((s) => freshIds.has(s.id));
+                const cachedSignals = languageSignals.filter((s) => !freshIds.has(s.id));
+                const hasAny = languageSignals.length > 0;
+
+                function SignalRow({ sig, border, muted }: { sig: LanguageSignal; border: string; muted: boolean }) {
+                  return (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 240px 120px", border, borderBottom: "none", padding: "14px 16px", alignItems: "center", background: muted ? "#0e0e0e" : "#121212" }}>
+                      <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.2rem", letterSpacing: "0.04em", color: muted ? "#a09880" : "#F0EAD6" }}>{sig.name}</span>
+                      <span style={{ opacity: muted ? 0.65 : 1 }}><MatchBar value={sig.matchScore} /></span>
                       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                        <button onClick={() => setInspecting(sig)} style={{ ...outlineBtn, fontSize: "1.05rem", padding: "6px 14px" }}>Dossier</button>
+                        <button onClick={() => setInspecting(sig)} style={{ ...outlineBtn, fontSize: "1.05rem", padding: "6px 14px", borderColor: muted ? "#F0EAD640" : "#F0EAD6", color: muted ? "#a09880" : "#F0EAD6" }}>Dossier</button>
                       </div>
                     </div>
-                  ))}
-                </>
-              )}
+                  );
+                }
+
+                return (
+                  <>
+                    {searching && <ScanPlaceholder />}
+
+                    {!searching && !hasAny && (
+                      <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.3rem", color: "#a09880", letterSpacing: "0.08em", lineHeight: 1.8 }}>
+                          {"> NO SIGNALS DETECTED."}<br />
+                          {"INITIATE SCAN TO RECOVER ANCIENT PHONETICS."}
+                        </div>
+                      </div>
+                    )}
+
+                    {freshSignals.length > 0 && (
+                      <div style={{ marginBottom: cachedSignals.length > 0 ? "32px" : 0 }}>
+                        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginBottom: "10px", letterSpacing: "0.06em" }}>
+                          {freshSignals.length} new signal{freshSignals.length !== 1 ? "s" : ""} — triangulated from Wikipedia, PHOIBLE, Wiktionary
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 240px 120px", border: "2px solid #F0EAD6", borderBottom: "none", padding: "8px 16px", background: "#F0EAD608", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                          <span>Recovered Signal</span><span>Confidence</span><span style={{ textAlign: "right" }}>Dossier</span>
+                        </div>
+                        {freshSignals.map((sig, idx) => (
+                          <div key={sig.id + "-fresh-" + idx} style={{ borderBottom: idx === freshSignals.length - 1 ? "2px solid #F0EAD6" : undefined }}>
+                            <SignalRow sig={sig} border="2px solid #F0EAD6" muted={false} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {cachedSignals.length > 0 && (
+                      <div>
+                        <div style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", marginBottom: "10px", letterSpacing: "0.06em" }}>
+                          {"> RECOVERED SIGNALS (LOCAL ARCHIVE)"}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 240px 120px", border: "1px solid #F0EAD630", borderBottom: "none", padding: "8px 16px", background: "#F0EAD604", fontFamily: "'VT323', monospace", fontSize: "0.95rem", color: "#a09880", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                          <span>Signal</span><span>Confidence</span><span style={{ textAlign: "right" }}>Dossier</span>
+                        </div>
+                        {cachedSignals.map((sig, idx) => (
+                          <div key={sig.id + "-cached-" + idx} style={{ borderBottom: idx === cachedSignals.length - 1 ? "1px solid #F0EAD630" : undefined }}>
+                            <SignalRow sig={sig} border="1px solid #F0EAD630" muted={true} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {hasAny && (
+                      <div style={{ marginTop: "32px", display: "flex", justifyContent: "flex-end" }}>
+                        <button
+                          onClick={handlePurge}
+                          style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", letterSpacing: "0.08em", color: "#a09880", background: "transparent", border: "1px solid #a0988040", padding: "8px 18px", cursor: "pointer" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#c44"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#c4444460"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a09880"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#a0988040"; }}
+                        >
+                          [ PURGE LOCAL ARCHIVE ]
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
