@@ -1,0 +1,33 @@
+"We are refactoring **Screen 3 (The Interrogation Terminal)** to use ElevenLabs **Chat Mode** (Text-only) to avoid WebRTC/Microphone errors. 
+
+**1. Update Backend Agent Creation (server.js):**
+- In `/api/create-agent`, update the `conversationalAi.agents.create` config:
+    - Set `conversationConfig.conversation.textOnly` to `true`.
+    - Set `conversationConfig.tts` to `null` (or remove it), as the agent won't be speaking directly.
+    - **Crucial System Prompt Update:** Add this instruction: 'You must respond ONLY in a valid JSON format: { \"phonetic\": \"[The native language response]\", \"english\": \"[The English translation]\" }. Do not include any other text.'
+
+**2. Create the Interrogation API (server.js):**
+- Create a new POST route: `/api/interrogate`.
+- It should receive `agentId`, `voiceId`, and `userMessage`.
+- **Logic:**
+    1. Call `elevenlabs.conversationalAi.agents.conversations.create` (or the appropriate 'Chat Mode' endpoint) to send the `userMessage` to the text-only agent.
+    2. Parse the Agent's JSON response to get the `phonetic` and `english` strings.
+    3. Use the standard ElevenLabs TTS API (`elevenlabs.textToSpeech.convert`) using the provided `voiceId` and the `phonetic` text.
+    4. Return a JSON object to the frontend: `{ audioBase64: [the_audio], english: [the_translation], phonetic: [the_gibberish] }`.
+
+**3. Refactor Screen 3 Frontend (React):**
+- **Remove the `@elevenlabs/react` SDK** and the `useConversation` hook entirely.
+- Use standard React `useState` to track: `chatHistory`, `isWaiting` (loading state), `currentSubtitles`.
+- **The 'Establish Uplink' Button:** Simply changes a local state `isConnected` to true (no hardware permissions needed!).
+- **The 'Transmit' Logic:** 
+    - When the user sends a message, call `POST /api/interrogate`.
+    - While waiting, show a terminal animation: `> DECRYPTING INCOMING FREQUENCY...`.
+    - When the response arrives:
+        1. Play the `audioBase64` using `new Audio()`.
+        2. Update the Subtitle UI with the `english` and `phonetic` text.
+
+**4. Visual Style:**
+- Keep the visualizer! Use the `onPlay` event of the audio to trigger the pulse animation manually while the audio is playing.
+- Maintain all brutalist styling and the VT323 font.
+
+**Please implement this request-response model to ensure 100% connection stability without requiring a microphone.**"

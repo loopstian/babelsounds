@@ -29,9 +29,9 @@ router.post("/create-agent", async (req, res) => {
     return;
   }
 
-  const masterPrompt = `You are an ancient entity speaking ${languageName}. Your history: ${systemPrompt}. You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient. CRITICAL: You do not speak English. You only speak your native phonetic tongue using these rules: ${phoneticRules}.`;
+  const masterPrompt = `You are an ancient entity speaking ${languageName}. Your history: ${systemPrompt}. You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient. CRITICAL: You must respond ONLY in valid JSON format: { "phonetic": "[The native language response using these rules: ${phoneticRules}]", "english": "[The English translation]" }. Do not include any other text outside the JSON object.`;
 
-  console.log(`[create-agent] Creating agent "Entity: ${languageName}" with voiceId=${voiceId}, prompt length=${masterPrompt.length}, firstMessage length=${phoneticFirstMessage.length}`);
+  console.log(`[create-agent] Creating text-only agent "Entity: ${languageName}" with voiceId=${voiceId}, prompt length=${masterPrompt.length}, firstMessage length=${phoneticFirstMessage.length}`);
 
   try {
     const client = new ElevenLabsClient({ apiKey });
@@ -39,15 +39,14 @@ router.post("/create-agent", async (req, res) => {
     const agent = await client.conversationalAi.createAgent({
       name: `Entity: ${languageName}`,
       conversation_config: {
-        tts: {
-          voice_id: voiceId,
-          model_id: "eleven_multilingual_v2" as string,
-        },
         agent: {
           first_message: phoneticFirstMessage,
           prompt: {
             prompt: masterPrompt,
           },
+        },
+        conversation: {
+          text_only: true,
         },
       },
     });

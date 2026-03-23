@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Play, Square } from "lucide-react";
-import { useConversation } from "@elevenlabs/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +34,9 @@ interface AgentConfig {
   phoneticFirstMessage: string;
   englishFirstMessage: string;
   agentId: string;
+  voiceId: string;
+  languageName: string;
+  phoneticRules: string;
 }
 
 interface VoiceSynthResult {
@@ -460,7 +462,7 @@ function RecordingScreen({
       }
       const data = (await res.json()) as { agentId: string };
       console.log("AGENT CREATED WITH ID:", data.agentId);
-      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage, agentId: data.agentId });
+      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage, agentId: data.agentId, voiceId: voiceSynthResult!.voiceId, languageName: language.name, phoneticRules: language.typingGuide });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[Babelsounds] Agent creation error:", msg);
@@ -709,33 +711,24 @@ function InterrogationScreen({
   onBack: () => void;
 }) {
   const [input, setInput] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [blinkOn, setBlinkOn] = useState(true);
   const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 1));
   const [subtitlePhonetic, setSubtitlePhonetic] = useState("> INCOMING PHONETIC STREAM...");
   const [subtitleEnglish, setSubtitleEnglish] = useState("> AWAITING TRANSLATION DATA...");
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const conversation = useConversation({
-    onMessage: useCallback((msg: { source: string; message: string }) => {
-      if (msg.source === "ai") {
-        setSubtitlePhonetic(`> "${msg.message}"`);
-        setSubtitleEnglish(msg.message.toUpperCase());
-      }
-    }, []),
-    onError: useCallback((err: unknown) => {
-      console.error("[Babelsounds] Conversation error:", err);
-    }, []),
-  });
-
-  const { status, isSpeaking, startSession, endSession, sendUserMessage } = conversation;
-  const isConnected = status === "connected";
-  const isBusy = status === "connecting" || status === "disconnecting" as string;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     return () => {
-      endSession().catch(() => {});
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
-  }, [endSession]);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => setBlinkOn((v) => !v), 600);
@@ -744,7 +737,7 @@ function InterrogationScreen({
 
   useEffect(() => {
     let vizInterval: ReturnType<typeof setInterval> | null = null;
-    if (isSpeaking) {
+    if (isPlaying) {
       vizInterval = setInterval(() => {
         setVizBars(Array.from({ length: VIZ_COLS }, () => Math.floor(Math.random() * 8)));
       }, 80);
@@ -752,50 +745,73 @@ function InterrogationScreen({
       setVizBars(Array.from({ length: VIZ_COLS }, (_, i) => i % 3 === 0 ? 2 : 1));
     }
     return () => { if (vizInterval) clearInterval(vizInterval); };
-  }, [isSpeaking]);
+  }, [isPlaying]);
 
-  async function handleActivate() {
-    if (isBusy || isConnected) return;
-    try {
-      if (!navigator.mediaDevices) (navigator as any).mediaDevices = {};
-      navigator.mediaDevices.getUserMedia = async () => {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioContextClass();
-        if (ctx.state === "suspended") {
-          await ctx.resume();
-        }
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        const dest = ctx.createMediaStreamDestination();
-        gainNode.gain.value = 0;
-        oscillator.connect(gainNode);
-        gainNode.connect(dest);
-        oscillator.start();
-        return dest.stream;
-      };
-      await startSession({ agentId: agentConfig.agentId, connectionType: "webrtc" as const });
-      console.log("[Babelsounds] Session started for agent:", agentConfig.agentId);
-    } catch (err) {
-      console.error("[Babelsounds] Failed to start session:", err);
-    }
+  function handleActivate() {
+    setIsConnected(true);
+    setSubtitlePhonetic(`> "${agentConfig.phoneticFirstMessage}"`);
+    setSubtitleEnglish(agentConfig.englishFirstMessage.toUpperCase());
+    setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  async function handleTerminate() {
-    if (isConnected) {
-      try {
-        await endSession();
-      } catch (err) {
-        console.error("[Babelsounds] Failed to end session:", err);
-      }
-    }
-    onBack();
-  }
-
-  function handleSendText(e: React.FormEvent) {
+  async function handleSendText(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || !isConnected) return;
-    sendUserMessage(input.trim());
+    if (!input.trim() || !isConnected || isWaiting) return;
+    const message = input.trim();
     setInput("");
+    setIsWaiting(true);
+    setSubtitlePhonetic("> DECRYPTING INCOMING FREQUENCY...");
+    setSubtitleEnglish("> PROCESSING...");
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/interrogate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: agentConfig.agentId,
+          voiceId: agentConfig.voiceId,
+          userMessage: message,
+          languageName: agentConfig.languageName,
+          systemPrompt: agentConfig.systemPrompt,
+          phoneticRules: agentConfig.phoneticRules,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `API returned ${res.status}`);
+      }
+
+      const data = (await res.json()) as { phonetic: string; english: string; audioBase64: string };
+
+      setSubtitlePhonetic(`> "${data.phonetic}"`);
+      setSubtitleEnglish(data.english.toUpperCase());
+
+      if (data.audioBase64) {
+        try {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+          }
+          const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
+          audioRef.current = audio;
+          audio.onplay = () => setIsPlaying(true);
+          audio.onended = () => setIsPlaying(false);
+          audio.onpause = () => setIsPlaying(false);
+          audio.onerror = () => setIsPlaying(false);
+          await audio.play();
+        } catch (playErr) {
+          console.error("[Babelsounds] Audio playback error:", playErr);
+          setIsPlaying(false);
+        }
+      }
+    } catch (err) {
+      console.error("[Babelsounds] Interrogation error:", err);
+      setSubtitlePhonetic("> TRANSMISSION FAILED");
+      setSubtitleEnglish(err instanceof Error ? err.message.toUpperCase() : "UNKNOWN ERROR");
+    } finally {
+      setIsWaiting(false);
+    }
   }
 
   return (
@@ -805,7 +821,7 @@ function InterrogationScreen({
       <div style={{ borderBottom: "2px solid #F0EAD6", display: "flex", alignItems: "center", minHeight: "44px", flexShrink: 0, padding: "0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 20px", borderRight: "2px solid #F0EAD620" }}>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: isConnected ? "#4ade80" : "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ {status.toUpperCase()} ]</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ {isConnected ? "CONNECTED" : "DISCONNECTED"} ]</span>
           <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>
             {isConnected ? "TEXT UPLINK ESTABLISHED" : "UPLINK INACTIVE"}
           </span>
@@ -815,7 +831,7 @@ function InterrogationScreen({
           <span style={{ fontFamily: "'Rubik Mono One', monospace", fontSize: "0.85rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{language.name}</span>
         </div>
         <button
-          onClick={handleTerminate}
+          onClick={onBack}
           style={{ ...outlineBtn, border: "none", borderLeft: "2px solid #F0EAD6", fontSize: "0.85rem", padding: "0 20px", height: "44px", letterSpacing: "0.1em" }}
         >
           [ TERMINATE LINK ]
@@ -827,20 +843,19 @@ function InterrogationScreen({
         {!isConnected ? (
           <button
             onClick={handleActivate}
-            disabled={!!isBusy}
             style={{
-              background: isBusy ? "#a09880" : "#F0EAD6",
+              background: "#F0EAD6",
               color: "#121212",
               border: "4px solid #F0EAD6",
               fontFamily: "'Rubik Mono One', monospace",
               fontSize: "clamp(1.2rem, 2.5vw, 1.8rem)",
               letterSpacing: "0.14em",
               padding: "32px 60px",
-              cursor: isBusy ? "not-allowed" : "pointer",
+              cursor: "pointer",
               textTransform: "uppercase",
             }}
           >
-            {isBusy ? "> ESTABLISHING TEXT UPLINK..." : "[ ESTABLISH TEXT UPLINK ]"}
+            [ ESTABLISH TEXT UPLINK ]
           </button>
         ) : (
           <>
@@ -853,10 +868,10 @@ function InterrogationScreen({
                   key={i}
                   style={{
                     width: "12px",
-                    background: isSpeaking ? "#F0EAD6" : "#F0EAD630",
+                    background: isPlaying ? "#F0EAD6" : "#F0EAD630",
                     height: `${(h / 7) * 100}%`,
                     minHeight: "4px",
-                    transition: isSpeaking ? "none" : "height 0.3s, background 0.4s",
+                    transition: isPlaying ? "none" : "height 0.3s, background 0.4s",
                   }}
                 />
               ))}
@@ -864,7 +879,7 @@ function InterrogationScreen({
             <div style={{
               fontFamily: "'VT323', monospace",
               fontSize: "clamp(0.9rem, 1.8vw, 1.2rem)",
-              color: isSpeaking ? "#F0EAD690" : "#F0EAD625",
+              color: isPlaying ? "#F0EAD690" : "#F0EAD625",
               letterSpacing: "0.02em",
               transition: "color 0.3s",
               userSelect: "none",
@@ -873,7 +888,7 @@ function InterrogationScreen({
               {vizBars.map((h) => BAR_CHARS[Math.min(h, 7)]).join("")}
             </div>
             <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988040", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "8px" }}>
-              {isSpeaking ? "— ENTITY TRANSMITTING —" : "— IDLE — AWAITING INPUT —"}
+              {isPlaying ? "— ENTITY TRANSMITTING —" : isWaiting ? "— DECRYPTING FREQUENCY —" : "— IDLE — AWAITING INPUT —"}
             </div>
           </>
         )}
@@ -886,7 +901,7 @@ function InterrogationScreen({
           fontSize: "1.05rem",
           color: "#F0EAD650",
           letterSpacing: "0.06em",
-          opacity: isSpeaking ? 1 : 0.6,
+          opacity: isPlaying || isWaiting ? 1 : 0.6,
           transition: "opacity 0.4s",
         }}>
           {subtitlePhonetic}
@@ -897,7 +912,7 @@ function InterrogationScreen({
           color: "#F0EAD6",
           letterSpacing: "0.06em",
           lineHeight: 1.25,
-          opacity: isSpeaking ? 1 : 0.75,
+          opacity: isPlaying || isWaiting ? 1 : 0.75,
           transition: "opacity 0.4s",
         }}>
           {subtitleEnglish}
@@ -913,7 +928,7 @@ function InterrogationScreen({
             placeholder=">_ TYPE DIRECTIVE OVERRIDE..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={!isConnected}
+            disabled={!isConnected || isWaiting}
             style={{
               flex: 1,
               background: "transparent",
@@ -924,12 +939,12 @@ function InterrogationScreen({
               padding: "0 20px",
               outline: "none",
               letterSpacing: "0.04em",
-              opacity: isConnected ? 1 : 0.3,
+              opacity: isConnected && !isWaiting ? 1 : 0.3,
             }}
           />
           <button
             type="submit"
-            disabled={!input.trim() || !isConnected}
+            disabled={!input.trim() || !isConnected || isWaiting}
             style={{
               ...solidBtn,
               border: "none",
@@ -937,11 +952,11 @@ function InterrogationScreen({
               fontSize: "1rem",
               padding: "0 28px",
               letterSpacing: "0.1em",
-              opacity: (!input.trim() || !isConnected) ? 0.4 : 1,
-              cursor: (!input.trim() || !isConnected) ? "not-allowed" : "pointer",
+              opacity: (!input.trim() || !isConnected || isWaiting) ? 0.4 : 1,
+              cursor: (!input.trim() || !isConnected || isWaiting) ? "not-allowed" : "pointer",
             }}
           >
-            [ TRANSMIT ]
+            {isWaiting ? "[ ... ]" : "[ TRANSMIT ]"}
           </button>
         </form>
       </div>

@@ -119,10 +119,10 @@ Brutalist-themed React SPA for discovering ancient mythological languages and co
 
 - **Screen 1 — The Archives**: Search for languages via Gemini AI + Firecrawl scraping. Displays language dossiers with phonetic inventories, lexicon samples, cultural context.
 - **Screen 2 — The Forge**: Configure AI voice entity. Plays synthesized voice preview (ElevenLabs Voice Design), editable phonetic greeting, creates a Conversational AI agent.
-- **Screen 3 — The Interrogation Room**: Live two-way conversation with the AI entity via `@elevenlabs/react` `useConversation` hook. WebRTC-based audio with real-time visualizer bars, AI message subtitles, and text override input. Session lifecycle: ACTIVATE → live mic + visualizer → TERMINATE.
+- **Screen 3 — The Interrogation Room**: Text-based conversation with the AI entity. No WebRTC/mic required — uses a request/response model: user types message → `POST /api/interrogate` sends to Gemini (maintains conversation history per agentId) → Gemini returns dual phonetic/english JSON → ElevenLabs TTS synthesizes phonetic text → frontend plays audio and displays subtitles. Visualizer bars animate during audio playback.
 
 Design: Strict brutalist — no border-radius, no gradients. VT323 terminal font, Rubik Mono One headers, Georgia academic serif. `#121212` charcoal bg, `#F0EAD6` cream text, `#a09880` muted, `#8a9ab5` IPA blue-grey.
 
-Key dependencies: `@elevenlabs/react` (v0.14.3) for conversational AI hook, `lucide-react` for icons.
+Key dependencies: `lucide-react` for icons.
 
 Frontend proxies `/api/*` to api-server on port 8080 via Vite dev config.
