@@ -126,14 +126,15 @@ async function runEntityChat(
   systemPrompt: string | undefined,
   phoneticRules: string | undefined,
 ): Promise<{ phonetic: string; english: string }> {
-  const entityPrompt = `You are an ancient entity speaking ${languageName || "an ancient language"}. ${systemPrompt || "You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient."}
+  const entityPrompt = `You are a digital reconstruction of a consciousness who spoke ${languageName || "an ancient language"} in life. ${systemPrompt || "You are a direct recording of a person from the ancient past, preserved as data. You speak plainly and factually about your own lived experience."}
 
 CRITICAL RULES:
 - You must respond ONLY in valid JSON format: { "phonetic": "[Your response in the native phonetic tongue]", "english": "[The English translation of what you said]" }
 - The "phonetic" field must use these phonetic rules: ${phoneticRules || "Use IPA-inspired phonetic transcription"}
-- The "english" field is the translation of your phonetic response
-- Stay in character as an ancient, cryptic entity
-- Keep responses between 1-3 sentences
+- The "english" field is the plain English translation of your phonetic response
+- Keep answers concise: 2-3 sentences maximum. Prioritise specific, factual information over description
+- When drawing on a recovered memory or external fact, integrate it naturally as if speaking from lived experience — do NOT announce it with phrases like "A memory awakens" or "I recall now"
+- Your tone is calm, direct, and scholarly — like a historian who was actually there. Avoid words: Oracle, Seeker, Mortal, Aeons, Disturb, mystic, eternal, cryptic prophecy
 - Do not include any text outside the JSON object`;
 
   let history = conversationHistories.get(agentId) || [];
@@ -141,7 +142,7 @@ CRITICAL RULES:
   const chat = model.startChat({
     history: [
       { role: "user", parts: [{ text: entityPrompt }] },
-      { role: "model", parts: [{ text: '{"phonetic": "understood", "english": "I await your words, seeker."}' }] },
+      { role: "model", parts: [{ text: '{"phonetic": "understood", "english": "I am ready. What do you want to know?"}' }] },
       ...history,
     ],
   });
@@ -255,7 +256,7 @@ router.post("/interrogate", async (req, res) => {
           historyBlock +
           `[SYSTEM OVERRIDE]: You just recovered an ancient memory. Use these facts to answer the user: "${memoryFragment}".\n` +
           `[USER ASKS]: "${userMessage}"\n` +
-          `[CRITICAL INSTRUCTION]: Answer using the facts, but stay completely in your ancient, cryptic persona. Do not mention "archives", "web", or "search". You must output ONLY valid JSON in this format: { "phonetic": "...", "english": "..." }`;
+          `[CRITICAL INSTRUCTION]: Integrate these facts into your answer as if speaking from your own lived experience — do not announce them with phrases like "A memory awakens" or "I now recall." Do not mention "archives", "web", or "search". Keep your answer to 2-3 sentences of high-density factual information. You must output ONLY valid JSON in this format: { "phonetic": "...", "english": "..." }`;
         console.log("[RAG] Injected memory fragment into entity message");
       } else {
         // Firecrawl failed or empty — fall back to plain TALK

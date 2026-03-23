@@ -907,7 +907,8 @@ function InterrogationScreen({
       setTelemetry(data.telemetry ?? null);
 
       setSubtitlePhonetic(`> "${data.phonetic}"`);
-      setSubtitleEnglish(data.english.toUpperCase());
+      const eng = data.english.trim();
+      setSubtitleEnglish(eng.length > 0 ? eng.charAt(0).toUpperCase() + eng.slice(1).toLowerCase() : eng);
 
       if (data.audioBase64) {
         try {
