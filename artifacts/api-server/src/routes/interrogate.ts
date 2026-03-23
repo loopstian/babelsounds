@@ -6,6 +6,41 @@ const router = Router();
 
 const conversationHistories = new Map<string, { role: string; parts: { text: string }[] }[]>();
 
+interface GatekeeperResult {
+  action: "TALK" | "SEARCH";
+  category: string | null;
+  query: string | null;
+}
+
+async function runGatekeeper(
+  model: ReturnType<InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"]>,
+  userMessage: string,
+  languageName: string,
+): Promise<GatekeeperResult> {
+  const gatekeeperInstruction = `You are a Research Coordinator for an Archaeological AI. Analyze the user's message to an ancient entity.
+Determine if the message requires specific historical, cultural, or artistic knowledge (e.g., questions about food, poetry, combat, geography, or rituals).
+If the message is simple small talk (e.g., "Hi", "Who are you?", "You are scary"), return this JSON: {"action": "TALK", "category": null, "query": null}.
+If the message requires specific knowledge, return this JSON: {"action": "SEARCH", "category": "FOOD|POETRY|COMBAT|HISTORY|OTHER", "query": "a highly specific search query to find the answer on the web regarding the ${languageName} culture"}.
+Return ONLY the raw JSON.`;
+
+  const gateChat = model.startChat({
+    history: [
+      { role: "user", parts: [{ text: gatekeeperInstruction }] },
+      { role: "model", parts: [{ text: '{"action":"TALK","category":null,"query":null}' }] },
+    ],
+  });
+
+  const gateResult = await gateChat.sendMessage(userMessage);
+  const raw = gateResult.response.text().replace(/```json\s*/g, "").replace(/```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(raw) as GatekeeperResult;
+    return parsed;
+  } catch {
+    return { action: "TALK", category: null, query: null };
+  }
+}
+
 router.post("/interrogate", async (req, res) => {
   const { agentId, voiceId, userMessage, languageName, systemPrompt, phoneticRules } = req.body as {
     agentId?: string;
@@ -34,6 +69,22 @@ router.post("/interrogate", async (req, res) => {
     const genAI = new GoogleGenerativeAI(geminiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+    // ── Step 1: Intent Gatekeeper ──────────────────────────────────────────────
+    const gate = await runGatekeeper(model, userMessage, languageName || "an ancient culture");
+
+    if (gate.action === "SEARCH") {
+      console.log(`[GATEKEEPER] Action: SEARCH | Category: ${gate.category} | Query: ${gate.query}`);
+      res.json({
+        phonetic: "...",
+        english: `SYSTEM: [SEARCH_REQUIRED] - Querying ancient archives for: ${gate.query}`,
+        audioBase64: null,
+      });
+      return;
+    }
+
+    console.log(`[GATEKEEPER] Action: TALK`);
+
+    // ── Step 2: Entity Response via Gemini Chat ────────────────────────────────
     const entityPrompt = `You are an ancient entity speaking ${languageName || "an ancient language"}. ${systemPrompt || "You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient."}
 
 CRITICAL RULES:
@@ -77,6 +128,7 @@ CRITICAL RULES:
       english = rawResponse;
     }
 
+    // ── Step 3: TTS Synthesis ──────────────────────────────────────────────────
     let audioBase64 = "";
     const elevenClient = new ElevenLabsClient({ apiKey: elevenKey });
     try {

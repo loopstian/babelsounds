@@ -1,0 +1,24 @@
+"I am starting the implementation of the **Dynamic RAG system** for **Screen 3 (The Interrogation Terminal)**. The first step is to create an 'Intent Gatekeeper' in the backend to decide when to trigger a Firecrawl search.
+
+**1. Update the `POST /api/interrogate` route in `server.js`:**
+Before calling the ElevenLabs Agent, add a 'Classification' step using `gemini-2.5-flash`.
+
+**2. The Gatekeeper Logic:**
+Send the `userMessage` and the `selectedLanguage.name` to Gemini with this strict System Instruction:
+- 'You are a Research Coordinator for an Archaeological AI. Analyze the user's message to an ancient entity.
+- Determine if the message requires specific historical, cultural, or artistic knowledge (e.g., questions about food, poetry, combat, geography, or rituals).
+- If the message is simple small talk (e.g., "Hi", "Who are you?", "You are scary"), return this JSON: `{"action": "TALK", "category": null, "query": null}`.
+- If the message requires specific knowledge, return this JSON: `{"action": "SEARCH", "category": "FOOD|POETRY|COMBAT|HISTORY|OTHER", "query": "a highly specific search query to find the answer on the web regarding the [LanguageName] culture"}`.
+- Return ONLY the raw JSON.'
+
+**3. Conditional Execution (The Branch):**
+- Log the Gatekeeper's decision to the server console: `[GATEKEEPER] Action: SEARCH | Query: ...`.
+- For now, if the action is `TALK`, proceed to the ElevenLabs Agent as usual.
+- If the action is `SEARCH`, do NOT call Firecrawl yet. Instead, return a temporary mock response to the frontend: 
+  `{ audioBase64: null, english: "SYSTEM: [SEARCH_REQUIRED] - Querying ancient archives for: " + query, phonetic: "..." }`.
+
+**4. Frontend Feedback (React):**
+- In **Screen 3**, update the UI logic. If the response contains `[SEARCH_REQUIRED]`, update the subtitle area to show a flickering terminal message: `> ACCESSING ANCIENT MEMORIES: [QUERY]...` 
+- This confirms the Gatekeeper is correctly identifying when a search is needed.
+
+**Please implement this 'Intent Gatekeeper' branch in the backend and ensure the frontend can display the 'Search Required' state.**"
