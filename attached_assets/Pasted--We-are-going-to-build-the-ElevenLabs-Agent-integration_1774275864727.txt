@@ -1,0 +1,24 @@
+"We are going to build the ElevenLabs Agent integration step-by-step. For this first step, we need to create a backend endpoint to generate the Agent and wire up the initialization button on Screen 2. Do not build Screen 3 yet.
+
+**1. Create the Backend Endpoint (server.js):**
+- Create a new POST route: `/api/create-agent`.
+- This route will receive the following from the request body: `voiceId`, `languageName`, `systemPrompt` (the lore), `phoneticRules` (the typing guide), and `phoneticFirstMessage`.
+- Use the ElevenLabs SDK to create an agent: `elevenlabs.conversationalAi.agents.create({...})`.
+- **The Agent Configuration:**
+  - `name`: \`Entity: \${languageName}\`
+  - `conversationConfig.tts`: Set `voiceId` to the provided `voiceId`. Set `modelId` to `"eleven_multilingual_v2"` (do not use flash, we need multilingual for phonetics).
+  - `conversationConfig.agent.firstMessage`: Set this to the `phoneticFirstMessage`.
+  - `conversationConfig.agent.prompt.prompt`: Construct a master prompt like this: 
+    *\"You are an ancient entity speaking [languageName]. Your history: [systemPrompt]. You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient. CRITICAL: You do not speak English. You only speak your native phonetic tongue using these rules: [phoneticRules].\"*
+- Return the generated `agentId` to the client: `res.json({ agentId: agent.agentId })`. Add a `try/catch` block to handle and log any ElevenLabs API errors.
+
+**2. Wire Up Screen 2 (The Forge):**
+- Locate the large `[ INITIALIZE ENTITY CONNECTION ]` button at the bottom of Screen 2.
+- Create an async function `handleInitializeEntity`.
+- Add a local state `isInitializing` (boolean, default `false`).
+- When clicked, set `isInitializing` to true and change the button text to `> UPLOADING NEURAL PATHWAYS...`.
+- Make a `POST` request to `/api/create-agent` passing the `voiceId` (from the prior synthesis step), `selectedLanguage.name`, `systemPrompt`, `phoneticRules` (the typing guide), and `phoneticFirstMessage`.
+- Await the response and `console.log('AGENT CREATED WITH ID:', data.agentId)`.
+- Revert the button text and state when complete.
+
+**Please only implement this backend endpoint and the button click handler. Keep all brutalist styling intact.**"

@@ -68,6 +68,11 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
     - Receives `vocalBlueprint` + `phoneticFirstMessage` from request body — phonetic text is what gets spoken by the voice
     - Uses ElevenLabs SDK `client.textToVoice.createPreviews()` to generate a voice preview
     - Returns `{ voiceId: string, audioBase64: string }` — base64-encoded MP3 + generated voice ID
+  - `src/routes/create-agent.ts` — `POST /api/create-agent` — ElevenLabs Conversational AI Agent creation:
+    - Receives `voiceId`, `languageName`, `systemPrompt`, `phoneticRules`, `phoneticFirstMessage`
+    - Constructs a master prompt instructing the entity to speak only in the native phonetic tongue
+    - Uses ElevenLabs SDK `conversationalAi.createAgent()` with `eleven_multilingual_v2` model
+    - Returns `{ agentId: string }` — the created agent's ID for subsequent conversation sessions
 - Depends on: `@workspace/db`, `@workspace/api-zod`, `@google/generative-ai`, `@mendable/firecrawl-js`, `elevenlabs`
 - Secrets used: `GEMINI_SECRET`, `FIRECRAWL_SECRET` (also checked as `FIRECRWL_SECRECT` — legacy typo fallback), `ELEVEN_SECRET` — all server-side only
 - `pnpm --filter @workspace/api-server run dev` — run the dev server

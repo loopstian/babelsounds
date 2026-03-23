@@ -33,6 +33,7 @@ interface AgentConfig {
   systemPrompt: string;
   phoneticFirstMessage: string;
   englishFirstMessage: string;
+  agentId: string;
 }
 
 interface VoiceSynthResult {
@@ -394,8 +395,7 @@ function RecordingScreen({
   const [systemPrompt, setSystemPrompt] = useState(language.systemPrompt);
   const [phoneticFirstMessage, setPhoneticFirstMessage] = useState(language.phoneticFirstMessage);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [bootLines, setBootLines] = useState<string[]>([]);
-  const [cursorOn, setCursorOn] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -436,32 +436,36 @@ function RecordingScreen({
     }
   }
 
-  const BOOT_SEQUENCE = [
-    "> VALIDATING VOCAL PARAMETERS...",
-    "> ENCODING NEURAL PATHWAY...",
-    "> COMPILING PHONETIC OVERRIDE...",
-    "> HANDSHAKING WITH ELEVENLABS API...",
-    "> ENTITY CONSCIOUSNESS INITIALIZING...",
-    "> CONNECTION ESTABLISHED.",
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => setCursorOn((v) => !v), 480);
-    return () => clearInterval(interval);
-  }, []);
-
-  function handleInitialize() {
+  async function handleInitializeEntity() {
     if (isInitializing) return;
     setIsInitializing(true);
-    setBootLines([]);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    BOOT_SEQUENCE.forEach((line, i) => {
-      timers.push(setTimeout(() => setBootLines((prev) => [...prev, line]), i * 260));
-    });
-    timers.push(setTimeout(() => {
-      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage });
-    }, BOOT_SEQUENCE.length * 260 + 400));
-    return () => timers.forEach(clearTimeout);
+    setInitError(null);
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/create-agent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceId: voiceSynthResult?.voiceId,
+          languageName: language.name,
+          systemPrompt,
+          phoneticRules: language.typingGuide,
+          phoneticFirstMessage,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `API returned ${res.status}`);
+      }
+      const data = (await res.json()) as { agentId: string };
+      console.log("AGENT CREATED WITH ID:", data.agentId);
+      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage, agentId: data.agentId });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[Babelsounds] Agent creation error:", msg);
+      setInitError(msg);
+      setIsInitializing(false);
+    }
   }
 
   const labelStyle: React.CSSProperties = {
@@ -509,21 +513,7 @@ function RecordingScreen({
         </div>
       </div>
 
-      {/* Boot overlay */}
-      {isInitializing && (
-        <div style={{ position: "fixed", inset: 0, background: "#121212", zIndex: 50, display: "flex", alignItems: "flex-end", padding: "64px 80px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {bootLines.map((line, i) => (
-              <div key={i} style={{ fontFamily: "'VT323', monospace", fontSize: "1.4rem", color: "#F0EAD6", letterSpacing: "0.05em" }}>
-                {line}
-                {i === bootLines.length - 1 && (
-                  <span style={{ opacity: cursorOn ? 1 : 0 }}> _</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      
 
       {/* Scrollable body */}
       <div className="panel-scroll" style={{ flex: 1 }}>
@@ -665,7 +655,7 @@ function RecordingScreen({
       {/* Initialize button — full width, inverted */}
       <div style={{ flexShrink: 0 }}>
         <button
-          onClick={handleInitialize}
+          onClick={handleInitializeEntity}
           disabled={isInitializing}
           style={{
             display: "block",
@@ -674,16 +664,29 @@ function RecordingScreen({
             color: "#121212",
             border: "none",
             borderTop: "4px solid #F0EAD6",
-            fontFamily: "'Rubik Mono One', monospace",
-            fontSize: "clamp(1rem, 2vw, 1.3rem)",
+            fontFamily: "'VT323', monospace",
+            fontSize: "clamp(1.1rem, 2vw, 1.5rem)",
             letterSpacing: "0.14em",
             padding: "22px",
             cursor: isInitializing ? "not-allowed" : "pointer",
             textTransform: "uppercase",
           }}
         >
-          {isInitializing ? "Initializing..." : "[ Initialize Entity Connection ]"}
+          {isInitializing ? "> UPLOADING NEURAL PATHWAYS..." : "[ Initialize Entity Connection ]"}
         </button>
+        {initError && (
+          <div style={{
+            padding: "12px 22px",
+            background: "#1a0000",
+            borderTop: "1px solid #F0EAD618",
+            fontFamily: "'VT323', monospace",
+            fontSize: "1rem",
+            color: "#ff6b6b",
+            letterSpacing: "0.06em",
+          }}>
+            &gt; ERROR: {initError}
+          </div>
+        )}
       </div>
 
     </div>
