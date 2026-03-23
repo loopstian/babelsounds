@@ -32,6 +32,11 @@ interface AgentConfig {
   firstMessage: string;
 }
 
+interface VoiceSynthResult {
+  voiceId: string;
+  audioBase64: string;
+}
+
 // ─── Button styles ────────────────────────────────────────────────────────────
 
 const solidBtn: React.CSSProperties = {
@@ -373,10 +378,12 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
 
 function RecordingScreen({
   language,
+  voiceSynthResult,
   onBack,
   onProceed,
 }: {
   language: LanguageSignal;
+  voiceSynthResult: VoiceSynthResult | null;
   onBack: () => void;
   onProceed: (config: AgentConfig) => void;
 }) {
@@ -386,6 +393,17 @@ function RecordingScreen({
   const [isInitializing, setIsInitializing] = useState(false);
   const [bootLines, setBootLines] = useState<string[]>([]);
   const [cursorOn, setCursorOn] = useState(true);
+
+  useEffect(() => {
+    if (!voiceSynthResult?.audioBase64) return;
+    try {
+      const audio = new Audio(`data:audio/mpeg;base64,${voiceSynthResult.audioBase64}`);
+      audio.volume = 0.9;
+      audio.play().catch((err) => console.warn("[Babelsounds] Audio autoplay blocked:", err));
+    } catch (err) {
+      console.error("[Babelsounds] Audio init error:", err);
+    }
+  }, []);
 
   const BOOT_SEQUENCE = [
     "> VALIDATING VOCAL PARAMETERS...",
@@ -494,6 +512,11 @@ function RecordingScreen({
           <div style={{ marginBottom: "28px" }}>
             <label style={labelStyle}>Vocal Cord Synthesis</label>
             <span style={subtitleStyle}>Physical acoustic parameters for ElevenLabs Voice Design. Describes the entity's larynx, resonance, and texture.</span>
+            {voiceSynthResult?.voiceId && (
+              <div style={{ marginBottom: "10px", padding: "8px 12px", border: "1px solid #F0EAD630", background: "#0a0a0a", fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.08em" }}>
+                VOICE_ID: <span style={{ color: "#F0EAD6" }}>{voiceSynthResult.voiceId}</span>
+              </div>
+            )}
             <textarea
               value={vocalBlueprint}
               onChange={(e) => setVocalBlueprint(e.target.value)}
@@ -818,15 +841,27 @@ function InterrogationScreen({
 
 // ─── Data Synthesis Transition ────────────────────────────────────────────────
 
-function DataSynthesisTransition({ onComplete }: { onComplete: () => void }) {
-  const [visibleLines, setVisibleLines] = useState(0);
+function DataSynthesisTransition({
+  synthesisState,
+  synthesisError,
+  onComplete,
+  onAbort,
+}: {
+  synthesisState: "loading" | "done" | "error";
+  synthesisError: string | null;
+  onComplete: () => void;
+  onAbort: () => void;
+}) {
+  const [animationDone, setAnimationDone] = useState(false);
   const [cursorOn, setCursorOn] = useState(true);
+  const [visibleLines, setVisibleLines] = useState(0);
+  const completeCalled = useRef(false);
 
   const lines = [
     "> INITIATING NEURAL HANDOFF...",
     "> EXTRACTING PHONETIC INVENTORY...",
     "> SYNTHESIZING VOCAL PROFILE...",
-    "> VOCAL LAB UPLINK ESTABLISHED.",
+    "> HANDSHAKING WITH ELEVENLABS API...",
   ];
 
   useEffect(() => {
@@ -834,9 +869,16 @@ function DataSynthesisTransition({ onComplete }: { onComplete: () => void }) {
     lines.forEach((_, i) => {
       timers.push(setTimeout(() => setVisibleLines(i + 1), i * 500));
     });
-    timers.push(setTimeout(() => onComplete(), 2100));
+    timers.push(setTimeout(() => setAnimationDone(true), lines.length * 500 + 200));
     return () => timers.forEach(clearTimeout);
   }, []);
+
+  useEffect(() => {
+    if (animationDone && synthesisState === "done" && !completeCalled.current) {
+      completeCalled.current = true;
+      setTimeout(() => onComplete(), 600);
+    }
+  }, [animationDone, synthesisState]);
 
   useEffect(() => {
     const interval = setInterval(() => setCursorOn((v) => !v), 480);
@@ -849,11 +891,40 @@ function DataSynthesisTransition({ onComplete }: { onComplete: () => void }) {
         {lines.slice(0, visibleLines).map((line, i) => (
           <div key={i} style={{ fontFamily: "'VT323', monospace", fontSize: "1.5rem", color: "#F0EAD6", letterSpacing: "0.05em" }}>
             {line}
-            {i === visibleLines - 1 && (
-              <span style={{ opacity: cursorOn ? 1 : 0 }}> _</span>
-            )}
           </div>
         ))}
+
+        {animationDone && synthesisState === "loading" && (
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.5rem", color: "#a09880", letterSpacing: "0.05em" }}>
+            {"> AWAITING VOICE SIGNATURE..."}
+            <span style={{ opacity: cursorOn ? 1 : 0 }}> _</span>
+          </div>
+        )}
+
+        {animationDone && synthesisState === "done" && (
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.5rem", color: "#F0EAD6", letterSpacing: "0.05em" }}>
+            {"> VOCAL SYNTHESIS COMPLETE."}
+          </div>
+        )}
+
+        {animationDone && synthesisState === "error" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.5rem", color: "#c44", letterSpacing: "0.05em" }}>
+              {`> ERROR: VOCAL SYNTHESIS FAILED.`}
+            </div>
+            {synthesisError && (
+              <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#a09880", letterSpacing: "0.05em" }}>
+                {`> ${synthesisError}`}
+              </div>
+            )}
+            <button
+              onClick={onAbort}
+              style={{ ...outlineBtn, marginTop: "16px", fontSize: "1.2rem", padding: "10px 28px", alignSelf: "flex-start" }}
+            >
+              ← Return to Archives
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -865,20 +936,54 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("archives");
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageSignal | null>(null);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
+  const [synthesisState, setSynthesisState] = useState<"loading" | "done" | "error">("loading");
+  const [synthesisError, setSynthesisError] = useState<string | null>(null);
+  const [voiceSynthResult, setVoiceSynthResult] = useState<VoiceSynthResult | null>(null);
 
-  function handleSelectLanguage(sig: LanguageSignal) {
+  async function handleSelectLanguage(sig: LanguageSignal) {
     setSelectedLanguage(sig);
+    setSynthesisState("loading");
+    setSynthesisError(null);
+    setVoiceSynthResult(null);
     setScreen("transition");
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/synthesize-voice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vocalBlueprint: sig.vocalBlueprint, firstMessage: sig.firstMessage }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `API returned ${res.status}`);
+      }
+      const data = (await res.json()) as VoiceSynthResult;
+      setVoiceSynthResult(data);
+      setSynthesisState("done");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[Babelsounds] Voice synthesis error:", msg);
+      setSynthesisError(msg);
+      setSynthesisState("error");
+    }
   }
 
   if (screen === "transition") {
-    return <DataSynthesisTransition onComplete={() => setScreen("recording")} />;
+    return (
+      <DataSynthesisTransition
+        synthesisState={synthesisState}
+        synthesisError={synthesisError}
+        onComplete={() => setScreen("recording")}
+        onAbort={() => { setSynthesisState("loading"); setScreen("archives"); }}
+      />
+    );
   }
 
   if (screen === "recording" && selectedLanguage) {
     return (
       <RecordingScreen
         language={selectedLanguage}
+        voiceSynthResult={voiceSynthResult}
         onBack={() => setScreen("archives")}
         onProceed={(config) => {
           setAgentConfig(config);

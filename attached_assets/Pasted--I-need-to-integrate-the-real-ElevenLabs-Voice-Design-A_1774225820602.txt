@@ -1,0 +1,36 @@
+"I need to integrate the real **ElevenLabs Voice Design API** into the transition between **Screen 1 (The Archives)** and **Screen 2 (The Forge)**. 
+
+**1. Backend Setup (server.js):**
+- Install the official ElevenLabs SDK: `npm install @elevenlabs/elevenlabs-js`.
+- In `server.js`, import `ElevenLabsClient`.
+- Create a new `POST` route: `/api/synthesize-voice`.
+- **Logic for `/api/synthesize-voice`:**
+    - Receive `vocalBlueprint` (the description) and `firstMessage` (the text to speak) from the request body.
+    - Initialize the `ElevenLabsClient` using `process.env.ELEVEN_SECRET`.
+    - Use the `elevenlabs.textToVoice.design` method. 
+    - Set `voiceDescription` to the `vocalBlueprint`.
+    - Set `text` to the `firstMessage`.
+    - **Response:** Return the `generatedVoiceId` and the `audioBase64` from the first preview in the results.
+
+**2. Frontend Handoff Refactor (Screen 1):**
+- In the **Research Dossier Modal**, update the 'USE THIS LANGUAGE' button logic.
+- When clicked:
+    1. Set the `currentScreen` to `'transition'`.
+    2. Immediately call the new `/api/synthesize-voice` backend endpoint.
+    3. Pass the `vocalBlueprint` and `firstMessage` from the currently selected language.
+    4. **Wait for the response.** (The transition screen stays visible while the API is working).
+    5. Once the `voiceId` and audio data are received:
+       - Save the `voiceId` to the `selectedLanguage` global state.
+       - Store the audio data temporarily so it can be played.
+       - Proceed to `currentScreen: 'recording'` (Screen 2).
+
+**3. The 'Acoustic Birth' (Screen 2):**
+- When the user arrives at **Screen 2 (The Forge)**, the voice is now officially 'born.'
+- **Auto-Play:** Use the browser's Audio API to automatically play the audio preview returned from the backend synthesis. This gives the user an immediate 'audio jump-scare' of the entity's voice as they enter the lab.
+- **Visuals:** Add a small, read-only status line in the 'Vocal Synth' panel: `VOICE_ID: [generated_id]`.
+- Ensure the 'Voice Description' and 'First Message' boxes are still populated with the text data.
+
+**4. Error Handling:**
+- If the ElevenLabs API fails, catch the error on the backend, send a 500 status, and have the frontend display a terminal-style error message: `> ERROR: VOCAL SYNTHESIS FAILED. RETRYING...` or return the user to the Archives.
+
+**Please ensure all API keys remain strictly on the backend and maintain the brutalist, charcoal-and-cream aesthetic throughout the transition.**"
