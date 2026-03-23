@@ -759,8 +759,18 @@ function InterrogationScreen({
     try {
       if (!navigator.mediaDevices) (navigator as any).mediaDevices = {};
       navigator.mediaDevices.getUserMedia = async () => {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioContextClass();
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
         const dest = ctx.createMediaStreamDestination();
+        gainNode.gain.value = 0;
+        oscillator.connect(gainNode);
+        gainNode.connect(dest);
+        oscillator.start();
         return dest.stream;
       };
       await startSession({ agentId: agentConfig.agentId, connectionType: "webrtc" as const });
