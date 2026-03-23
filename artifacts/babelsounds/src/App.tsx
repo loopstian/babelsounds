@@ -677,6 +677,12 @@ function RecordingScreen({
 
 const VIZ_COLS = 28;
 const SILENT_LINE = "----------------------------";
+const WAIT_PHASES = [
+  "> DECRYPTING INTENT...",
+  "> ACCESSING ANCIENT MEMORIES...",
+  "> SYNTHESIZING VOCAL RESPONSE...",
+  "> AWAITING UPLINK...",
+];
 
 function InterrogationScreen({
   language,
@@ -696,6 +702,7 @@ function InterrogationScreen({
   const [subtitlePhonetic, setSubtitlePhonetic] = useState<string | null>(null);
   const [subtitleEnglish, setSubtitleEnglish] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<string | null>(null);
+  const [waitPhase, setWaitPhase] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasResponse = subtitlePhonetic !== null;
@@ -727,6 +734,19 @@ function InterrogationScreen({
     }
     return () => { if (vizInterval) clearInterval(vizInterval); };
   }, [isPlaying]);
+
+  // Cinematic latency masking — cycle through terminal phases while waiting
+  useEffect(() => {
+    if (!isWaiting) {
+      setWaitPhase(0);
+      return;
+    }
+    setWaitPhase(0);
+    const t1 = setTimeout(() => setWaitPhase(1), 1500);
+    const t2 = setTimeout(() => setWaitPhase(2), 3500);
+    const t3 = setTimeout(() => setWaitPhase(3), 5000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [isWaiting]);
 
   async function handleSendText(e: React.FormEvent) {
     e.preventDefault();
@@ -860,9 +880,9 @@ function InterrogationScreen({
       {/* ── Subtitle Engine ── */}
       <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
         {isWaiting && !hasResponse ? (
-          /* Decrypting — first ever message, no prior response to show */
+          /* Cinematic wait — first message, no prior response */
           <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD640", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            {">"} DECRYPTING INCOMING FREQUENCY{blinkOn ? "..." : "   "}
+            {WAIT_PHASES[waitPhase]}{blinkOn ? "" : ""}
           </div>
 
         ) : !hasResponse && !isWaiting ? (
@@ -874,14 +894,14 @@ function InterrogationScreen({
         ) : (
           /* Response subtitles — shown once entity has spoken at least once */
           <>
-            {/* Telemetry flash — visible only when this response used live web data */}
+            {/* Telemetry flash — blinks, visible only when response used live web data */}
             {telemetry && !isWaiting && (
               <div style={{
                 fontFamily: "'VT323', monospace",
                 fontSize: "0.85rem",
                 color: "#8a9ab5",
                 letterSpacing: "0.08em",
-                opacity: blinkOn ? 1 : 0.55,
+                opacity: blinkOn ? 1 : 0.5,
                 transition: "opacity 0.15s",
                 textTransform: "uppercase",
                 marginBottom: "2px",
@@ -890,16 +910,19 @@ function InterrogationScreen({
               </div>
             )}
 
+            {/* Phonetic line — shows wait phase text while waiting, snaps to response */}
             <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD648", letterSpacing: "0.06em", lineHeight: 1.3 }}>
-              {isWaiting ? `> DECRYPTING${blinkOn ? "..." : "   "}` : subtitlePhonetic}
+              {isWaiting ? WAIT_PHASES[waitPhase] : subtitlePhonetic}
             </div>
+
+            {/* English translation — dims during wait, snaps to full opacity on arrival */}
             <div style={{
               fontFamily: "'Rubik Mono One', monospace",
               fontSize: "clamp(1rem, 2.4vw, 1.4rem)",
               color: "#F0EAD6",
               letterSpacing: "0.05em",
               lineHeight: 1.25,
-              opacity: isWaiting ? 0.35 : 1,
+              opacity: isWaiting ? 0.25 : 1,
               transition: "opacity 0.3s",
             }}>
               {subtitleEnglish ?? ""}

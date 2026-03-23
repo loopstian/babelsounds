@@ -1,0 +1,28 @@
+"I need to finalize the Dynamic RAG pipeline in the `POST /api/interrogate` route and update **Screen 3** to mask the API latency with cinematic terminal effects.
+
+**1. Backend Logging (server.js):**
+- In the `POST /api/interrogate` route, right after the Firecrawl SDK returns the search results, add a clear console log:
+  `console.log('\n=== FIRECRAWL RAW RESULT ===\n', firecrawlResult.data[0].markdown.substring(0, 500) + '...\n============================\n');`
+- This ensures I can verify the exact historical text the system recovered.
+
+**2. The Context Injector (server.js):**
+- When constructing the final message to send to the ElevenLabs Chat Agent, use this exact structure if a search was performed:
+  `[SYSTEM OVERRIDE]: You just recovered an ancient memory. Use these facts to answer the user: "${memoryFragment}".`
+  `[USER ASKS]: "${userMessage}"`
+  `[CRITICAL INSTRUCTION]: Answer using the facts, but stay completely in your ancient, cryptic persona. Do not mention "archives", "web", or "search". You must output ONLY valid JSON in this format: { "phonetic": "...", "english": "..." }`
+- If no search was performed (`action === 'TALK'`), just pass the `userMessage` with the JSON format instruction.
+
+**3. Cinematic Latency Masking (Frontend - Screen 3):**
+- Update the `isWaiting` state logic in the Interrogation Terminal.
+- When the user clicks `[ TRANSMIT ]`, set `isWaiting` to true.
+- Instead of a static 'Waiting...' text, create a dynamic terminal sequence in the subtitle area using a `useEffect` timer while `isWaiting` is true:
+  - *0s - 1.5s:* `> DECRYPTING INTENT...`
+  - *1.5s - 3.5s:* `> ACCESSING ANCIENT MEMORIES...`
+  - *3.5s - 5.0s:* `> SYNTHESIZING VOCAL RESPONSE...`
+  - *5.0s+ :* `> AWAITING UPLINK...`
+- When the response arrives from the backend, instantly clear the waiting text and display the final English subtitles and play the audio.
+
+**4. Error Resilience:**
+- If the ElevenLabs agent fails to return valid JSON (e.g., it includes markdown like \`\`\`json), catch the parse error on the backend, strip the markdown, and try parsing again before sending a 500 error.
+
+**Please implement these final RAG steps so the entity accurately uses the scraped data, logs it to the console, and keeps the user immersed during the API wait times.**"

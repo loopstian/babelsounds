@@ -13,6 +13,27 @@ interface GatekeeperResult {
   query: string | null;
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function cleanAndParseJSON(raw: string): { phonetic: string; english: string } | null {
+  const attempts = [
+    raw,
+    raw.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim(),
+    raw.replace(/```[\w]*\s*/g, "").replace(/```/g, "").trim(),
+  ];
+  for (const attempt of attempts) {
+    try {
+      const parsed = JSON.parse(attempt);
+      if (typeof parsed.phonetic === "string" && typeof parsed.english === "string") {
+        return parsed as { phonetic: string; english: string };
+      }
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
 async function runGatekeeper(
   model: ReturnType<InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"]>,
   userMessage: string,
@@ -65,6 +86,11 @@ async function fetchMemoryFragment(
       return null;
     }
 
+    // ── Firecrawl raw result log ───────────────────────────────────────────────
+    console.log(
+      `\n=== FIRECRAWL RAW RESULT ===\n${markdown.substring(0, 500)}...\n============================\n`,
+    );
+
     const truncated = markdown.length > 8000 ? markdown.slice(0, 8000) + "\n[TRUNCATED]" : markdown;
     console.log(`[RAG] Firecrawl returned ${markdown.length} chars — summarizing with gemini-2.5-flash-lite`);
 
@@ -87,6 +113,7 @@ async function runEntityChat(
   model: ReturnType<InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"]>,
   agentId: string,
   messageToSend: string,
+  originalUserMessage: string,
   languageName: string,
   systemPrompt: string | undefined,
   phoneticRules: string | undefined,
@@ -117,25 +144,20 @@ CRITICAL RULES:
 
   // Store the original user message in history (not the injected version)
   history.push(
-    { role: "user", parts: [{ text: messageToSend }] },
+    { role: "user", parts: [{ text: originalUserMessage }] },
     { role: "model", parts: [{ text: rawResponse }] },
   );
   if (history.length > 20) history = history.slice(-20);
   conversationHistories.set(agentId, history);
 
-  let phonetic = "";
-  let english = "";
-  try {
-    const cleaned = rawResponse.replace(/```json\s*/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-    phonetic = parsed.phonetic ?? "";
-    english = parsed.english ?? "";
-  } catch {
-    phonetic = rawResponse;
-    english = rawResponse;
+  const parsed = cleanAndParseJSON(rawResponse);
+  if (parsed) {
+    return parsed;
   }
 
-  return { phonetic, english };
+  // Final fallback — model didn't return JSON at all
+  console.error("[interrogate] Could not parse JSON from response, using raw text");
+  return { phonetic: rawResponse, english: rawResponse };
 }
 
 async function synthesizeTTS(
@@ -158,6 +180,8 @@ async function synthesizeTTS(
   console.log(`[interrogate] TTS generated: ${audioBase64.length} base64 chars`);
   return audioBase64;
 }
+
+// ── Route ──────────────────────────────────────────────────────────────────────
 
 router.post("/interrogate", async (req, res) => {
   const { agentId, voiceId, userMessage, languageName, systemPrompt, phoneticRules } = req.body as {
@@ -193,7 +217,7 @@ router.post("/interrogate", async (req, res) => {
     const gate = await runGatekeeper(model, userMessage, languageName || "an ancient culture");
     console.log(`[GATEKEEPER] Action: ${gate.action}${gate.query ? ` | Query: ${gate.query}` : ""}`);
 
-    let messageToSend = userMessage;
+    let messageToSend: string;
     let memoryFragment: string | null = null;
 
     // ── Step 2: RAG Pipeline (SEARCH branch) ──────────────────────────────────
@@ -201,13 +225,18 @@ router.post("/interrogate", async (req, res) => {
       memoryFragment = await fetchMemoryFragment(firecrawlKey, genAI, gate.query, languageName || "this culture");
 
       if (memoryFragment) {
-        // Inject recovered memory into the message sent to the entity
-        messageToSend = `[USER MESSAGE]: ${userMessage}\n\n[RECOVERED MEMORY]: ${memoryFragment}\n\n[INSTRUCTION]: You just remembered this from your past life. Use these facts to answer the user, but stay 100% in your cryptic, ancient persona. Speak only in your phonetic language.`;
-        console.log(`[RAG] Injected memory fragment into entity message`);
+        messageToSend =
+          `[SYSTEM OVERRIDE]: You just recovered an ancient memory. Use these facts to answer the user: "${memoryFragment}".\n` +
+          `[USER ASKS]: "${userMessage}"\n` +
+          `[CRITICAL INSTRUCTION]: Answer using the facts, but stay completely in your ancient, cryptic persona. Do not mention "archives", "web", or "search". You must output ONLY valid JSON in this format: { "phonetic": "...", "english": "..." }`;
+        console.log("[RAG] Injected memory fragment into entity message");
       } else {
         // Firecrawl failed or empty — fall back to plain TALK
         console.warn("[RAG] No memory fragment retrieved — falling back to TALK");
+        messageToSend = userMessage;
       }
+    } else {
+      messageToSend = userMessage;
     }
 
     // ── Step 3: Entity Response via Gemini Chat ────────────────────────────────
@@ -215,6 +244,7 @@ router.post("/interrogate", async (req, res) => {
       model,
       agentId,
       messageToSend,
+      userMessage,
       languageName || "an ancient language",
       systemPrompt,
       phoneticRules,
@@ -228,7 +258,7 @@ router.post("/interrogate", async (req, res) => {
       console.error("[interrogate] TTS failed (returning text-only):", ttsErr instanceof Error ? ttsErr.message : ttsErr);
     }
 
-    // ── Step 5: Respond — include telemetry when memory was recovered ──────────
+    // ── Step 5: Respond ────────────────────────────────────────────────────────
     res.json({
       phonetic,
       english,
