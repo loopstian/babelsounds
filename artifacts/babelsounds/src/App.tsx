@@ -695,11 +695,10 @@ function InterrogationScreen({
   const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 0));
   const [subtitlePhonetic, setSubtitlePhonetic] = useState<string | null>(null);
   const [subtitleEnglish, setSubtitleEnglish] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+  const [telemetry, setTelemetry] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasResponse = subtitlePhonetic !== null;
-  const isSearching = searchQuery !== null;
 
   useEffect(() => {
     setIsConnected(true);
@@ -734,6 +733,7 @@ function InterrogationScreen({
     if (!input.trim() || !isConnected || isWaiting) return;
     const message = input.trim();
     setInput("");
+    setTelemetry(null);
     setIsWaiting(true);
 
     try {
@@ -755,20 +755,16 @@ function InterrogationScreen({
         throw new Error(body.error ?? `API returned ${res.status}`);
       }
 
-      const data = (await res.json()) as { phonetic: string; english: string; audioBase64: string | null };
+      const data = (await res.json()) as {
+        phonetic: string;
+        english: string;
+        audioBase64: string | null;
+        telemetry?: string | null;
+      };
 
-      // ── Gatekeeper: SEARCH branch ──────────────────────────────────────────
-      if (data.english.includes("[SEARCH_REQUIRED]")) {
-        const queryMatch = data.english.match(/Querying ancient archives for:\s*(.+)$/i);
-        const query = queryMatch ? queryMatch[1].trim() : "unknown target";
-        setSearchQuery(query);
-        setSubtitlePhonetic(null);
-        setSubtitleEnglish(null);
-        return;
-      }
+      // Set telemetry flash (null clears any previous fragment)
+      setTelemetry(data.telemetry ?? null);
 
-      // ── TALK branch: normal entity response ────────────────────────────────
-      setSearchQuery(null);
       setSubtitlePhonetic(`> "${data.phonetic}"`);
       setSubtitleEnglish(data.english.toUpperCase());
 
@@ -792,7 +788,7 @@ function InterrogationScreen({
       }
     } catch (err) {
       console.error("[Babelsounds] Interrogation error:", err);
-      setSearchQuery(null);
+      setTelemetry(null);
       setSubtitlePhonetic("> TRANSMISSION FAILED");
       setSubtitleEnglish(err instanceof Error ? err.message.toUpperCase() : "UNKNOWN ERROR");
     } finally {
@@ -862,37 +858,12 @@ function InterrogationScreen({
       </div>
 
       {/* ── Subtitle Engine ── */}
-      <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px" }}>
-        {isWaiting && !hasResponse && !isSearching ? (
-          /* Decrypting — first message, no prior response */
+      <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
+        {isWaiting && !hasResponse ? (
+          /* Decrypting — first ever message, no prior response to show */
           <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD640", letterSpacing: "0.08em", textTransform: "uppercase" }}>
             {">"} DECRYPTING INCOMING FREQUENCY{blinkOn ? "..." : "   "}
           </div>
-
-        ) : isSearching && !isWaiting ? (
-          /* Gatekeeper SEARCH state — flickering archive access message */
-          <>
-            <div style={{
-              fontFamily: "'VT323', monospace",
-              fontSize: "1.05rem",
-              color: "#8a9ab5",
-              letterSpacing: "0.08em",
-              opacity: blinkOn ? 1 : 0.4,
-              transition: "opacity 0.1s",
-            }}>
-              {">"} ACCESSING ANCIENT MEMORIES{blinkOn ? "..." : "   "}
-            </div>
-            <div style={{
-              fontFamily: "'Rubik Mono One', monospace",
-              fontSize: "clamp(0.85rem, 2vw, 1.15rem)",
-              color: "#8a9ab5",
-              letterSpacing: "0.06em",
-              lineHeight: 1.3,
-              opacity: 0.8,
-            }}>
-              [ {searchQuery?.toUpperCase()} ]
-            </div>
-          </>
 
         ) : !hasResponse && !isWaiting ? (
           /* Cold start blinking cursor */
@@ -901,8 +872,24 @@ function InterrogationScreen({
           </div>
 
         ) : (
-          /* Normal response subtitles */
+          /* Response subtitles — shown once entity has spoken at least once */
           <>
+            {/* Telemetry flash — visible only when this response used live web data */}
+            {telemetry && !isWaiting && (
+              <div style={{
+                fontFamily: "'VT323', monospace",
+                fontSize: "0.85rem",
+                color: "#8a9ab5",
+                letterSpacing: "0.08em",
+                opacity: blinkOn ? 1 : 0.55,
+                transition: "opacity 0.15s",
+                textTransform: "uppercase",
+                marginBottom: "2px",
+              }}>
+                {">"} MEMORY RECOVERED: {telemetry.split(/\s+/).slice(0, 5).join(" ")}...
+              </div>
+            )}
+
             <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD648", letterSpacing: "0.06em", lineHeight: 1.3 }}>
               {isWaiting ? `> DECRYPTING${blinkOn ? "..." : "   "}` : subtitlePhonetic}
             </div>

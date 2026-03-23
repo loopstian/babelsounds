@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import FirecrawlApp from "@mendable/firecrawl-js";
 
 const router = Router();
 
@@ -41,6 +42,123 @@ Return ONLY the raw JSON.`;
   }
 }
 
+async function fetchMemoryFragment(
+  firecrawlKey: string,
+  genAI: GoogleGenerativeAI,
+  query: string,
+  languageName: string,
+): Promise<string | null> {
+  try {
+    const firecrawl = new FirecrawlApp({ apiKey: firecrawlKey });
+    const searchResult = await firecrawl.search(query, {
+      limit: 1,
+      scrapeOptions: { formats: ["markdown"] },
+    });
+
+    const raw = searchResult as Record<string, unknown>;
+    const dataArr = Array.isArray(raw.data) ? raw.data : Array.isArray(raw.web) ? raw.web : [];
+    const firstResult = dataArr[0] as Record<string, unknown> | undefined;
+    const markdown = (firstResult?.markdown as string) ?? "";
+
+    if (!markdown.trim()) {
+      console.warn("[RAG] Firecrawl returned no markdown content");
+      return null;
+    }
+
+    const truncated = markdown.length > 8000 ? markdown.slice(0, 8000) + "\n[TRUNCATED]" : markdown;
+    console.log(`[RAG] Firecrawl returned ${markdown.length} chars — summarizing with gemini-2.5-flash-lite`);
+
+    const summaryModel = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-lite",
+      systemInstruction: `You are a neural processor. Summarize the following web data into a 2-3 sentence "Memory Fragment" that directly answers the user's query about the ${languageName} culture. Focus on historical facts, specific recipes, or poetic structures found in the text.`,
+    });
+
+    const summaryResult = await summaryModel.generateContent(truncated);
+    const fragment = summaryResult.response.text().trim();
+    console.log(`[RAG] Memory Fragment: "${fragment.slice(0, 120)}..."`);
+    return fragment;
+  } catch (err) {
+    console.error("[RAG] Firecrawl/summarization failed:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+async function runEntityChat(
+  model: ReturnType<InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"]>,
+  agentId: string,
+  messageToSend: string,
+  languageName: string,
+  systemPrompt: string | undefined,
+  phoneticRules: string | undefined,
+): Promise<{ phonetic: string; english: string }> {
+  const entityPrompt = `You are an ancient entity speaking ${languageName || "an ancient language"}. ${systemPrompt || "You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient."}
+
+CRITICAL RULES:
+- You must respond ONLY in valid JSON format: { "phonetic": "[Your response in the native phonetic tongue]", "english": "[The English translation of what you said]" }
+- The "phonetic" field must use these phonetic rules: ${phoneticRules || "Use IPA-inspired phonetic transcription"}
+- The "english" field is the translation of your phonetic response
+- Stay in character as an ancient, cryptic entity
+- Keep responses between 1-3 sentences
+- Do not include any text outside the JSON object`;
+
+  let history = conversationHistories.get(agentId) || [];
+
+  const chat = model.startChat({
+    history: [
+      { role: "user", parts: [{ text: entityPrompt }] },
+      { role: "model", parts: [{ text: '{"phonetic": "understood", "english": "I await your words, seeker."}' }] },
+      ...history,
+    ],
+  });
+
+  const result = await chat.sendMessage(messageToSend);
+  const rawResponse = result.response.text();
+  console.log(`[interrogate] Gemini raw response: ${rawResponse.slice(0, 300)}`);
+
+  // Store the original user message in history (not the injected version)
+  history.push(
+    { role: "user", parts: [{ text: messageToSend }] },
+    { role: "model", parts: [{ text: rawResponse }] },
+  );
+  if (history.length > 20) history = history.slice(-20);
+  conversationHistories.set(agentId, history);
+
+  let phonetic = "";
+  let english = "";
+  try {
+    const cleaned = rawResponse.replace(/```json\s*/g, "").replace(/```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    phonetic = parsed.phonetic ?? "";
+    english = parsed.english ?? "";
+  } catch {
+    phonetic = rawResponse;
+    english = rawResponse;
+  }
+
+  return { phonetic, english };
+}
+
+async function synthesizeTTS(
+  elevenKey: string,
+  voiceId: string,
+  phonetic: string,
+): Promise<string> {
+  const elevenClient = new ElevenLabsClient({ apiKey: elevenKey });
+  const ttsText = phonetic.slice(0, 300) || "...";
+  const ttsResponse = await elevenClient.textToSpeech.convert(voiceId, {
+    text: ttsText,
+    model_id: "eleven_multilingual_v2",
+  });
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of ttsResponse as AsyncIterable<Buffer>) {
+    chunks.push(Buffer.from(chunk));
+  }
+  const audioBase64 = Buffer.concat(chunks).toString("base64");
+  console.log(`[interrogate] TTS generated: ${audioBase64.length} base64 chars`);
+  return audioBase64;
+}
+
 router.post("/interrogate", async (req, res) => {
   const { agentId, voiceId, userMessage, languageName, systemPrompt, phoneticRules } = req.body as {
     agentId?: string;
@@ -58,6 +176,8 @@ router.post("/interrogate", async (req, res) => {
 
   const elevenKey = process.env.ELEVEN_SECRET;
   const geminiKey = process.env.GEMINI_SECRET;
+  const firecrawlKey = process.env["FIRECRAWL_SECRET"] ?? process.env["FIRECRWL_SECRECT"];
+
   if (!elevenKey || !geminiKey) {
     res.status(500).json({ error: "API keys not configured on server" });
     return;
@@ -71,84 +191,50 @@ router.post("/interrogate", async (req, res) => {
 
     // ── Step 1: Intent Gatekeeper ──────────────────────────────────────────────
     const gate = await runGatekeeper(model, userMessage, languageName || "an ancient culture");
+    console.log(`[GATEKEEPER] Action: ${gate.action}${gate.query ? ` | Query: ${gate.query}` : ""}`);
 
-    if (gate.action === "SEARCH") {
-      console.log(`[GATEKEEPER] Action: SEARCH | Category: ${gate.category} | Query: ${gate.query}`);
-      res.json({
-        phonetic: "...",
-        english: `SYSTEM: [SEARCH_REQUIRED] - Querying ancient archives for: ${gate.query}`,
-        audioBase64: null,
-      });
-      return;
-    }
+    let messageToSend = userMessage;
+    let memoryFragment: string | null = null;
 
-    console.log(`[GATEKEEPER] Action: TALK`);
+    // ── Step 2: RAG Pipeline (SEARCH branch) ──────────────────────────────────
+    if (gate.action === "SEARCH" && gate.query && firecrawlKey) {
+      memoryFragment = await fetchMemoryFragment(firecrawlKey, genAI, gate.query, languageName || "this culture");
 
-    // ── Step 2: Entity Response via Gemini Chat ────────────────────────────────
-    const entityPrompt = `You are an ancient entity speaking ${languageName || "an ancient language"}. ${systemPrompt || "You are trapped in a digital terminal. Your personality is intimidating, cryptic, and ancient."}
-
-CRITICAL RULES:
-- You must respond ONLY in valid JSON format: { "phonetic": "[Your response in the native phonetic tongue]", "english": "[The English translation of what you said]" }
-- The "phonetic" field must use these phonetic rules: ${phoneticRules || "Use IPA-inspired phonetic transcription"}
-- The "english" field is the translation of your phonetic response
-- Stay in character as an ancient, cryptic entity
-- Keep responses between 1-3 sentences
-- Do not include any text outside the JSON object`;
-
-    let history = conversationHistories.get(agentId) || [];
-
-    const chat = model.startChat({
-      history: [
-        { role: "user", parts: [{ text: entityPrompt }] },
-        { role: "model", parts: [{ text: '{"phonetic": "understood", "english": "I await your words, seeker."}' }] },
-        ...history,
-      ],
-    });
-
-    const result = await chat.sendMessage(userMessage);
-    const rawResponse = result.response.text();
-    console.log(`[interrogate] Gemini raw response: ${rawResponse.slice(0, 300)}`);
-
-    history.push(
-      { role: "user", parts: [{ text: userMessage }] },
-      { role: "model", parts: [{ text: rawResponse }] },
-    );
-    if (history.length > 20) history = history.slice(-20);
-    conversationHistories.set(agentId, history);
-
-    let phonetic = "";
-    let english = "";
-    try {
-      const cleaned = rawResponse.replace(/```json\s*/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-      phonetic = parsed.phonetic ?? "";
-      english = parsed.english ?? "";
-    } catch {
-      phonetic = rawResponse;
-      english = rawResponse;
-    }
-
-    // ── Step 3: TTS Synthesis ──────────────────────────────────────────────────
-    let audioBase64 = "";
-    const elevenClient = new ElevenLabsClient({ apiKey: elevenKey });
-    try {
-      const ttsText = phonetic.slice(0, 300) || "...";
-      const ttsResponse = await elevenClient.textToSpeech.convert(voiceId, {
-        text: ttsText,
-        model_id: "eleven_multilingual_v2",
-      });
-
-      const chunks: Buffer[] = [];
-      for await (const chunk of ttsResponse as AsyncIterable<Buffer>) {
-        chunks.push(Buffer.from(chunk));
+      if (memoryFragment) {
+        // Inject recovered memory into the message sent to the entity
+        messageToSend = `[USER MESSAGE]: ${userMessage}\n\n[RECOVERED MEMORY]: ${memoryFragment}\n\n[INSTRUCTION]: You just remembered this from your past life. Use these facts to answer the user, but stay 100% in your cryptic, ancient persona. Speak only in your phonetic language.`;
+        console.log(`[RAG] Injected memory fragment into entity message`);
+      } else {
+        // Firecrawl failed or empty — fall back to plain TALK
+        console.warn("[RAG] No memory fragment retrieved — falling back to TALK");
       }
-      audioBase64 = Buffer.concat(chunks).toString("base64");
-      console.log(`[interrogate] TTS generated: ${audioBase64.length} base64 chars for ${ttsText.length} chars of phonetic text`);
+    }
+
+    // ── Step 3: Entity Response via Gemini Chat ────────────────────────────────
+    const { phonetic, english } = await runEntityChat(
+      model,
+      agentId,
+      messageToSend,
+      languageName || "an ancient language",
+      systemPrompt,
+      phoneticRules,
+    );
+
+    // ── Step 4: TTS Synthesis ──────────────────────────────────────────────────
+    let audioBase64 = "";
+    try {
+      audioBase64 = await synthesizeTTS(elevenKey, voiceId, phonetic);
     } catch (ttsErr) {
       console.error("[interrogate] TTS failed (returning text-only):", ttsErr instanceof Error ? ttsErr.message : ttsErr);
     }
 
-    res.json({ phonetic, english, audioBase64 });
+    // ── Step 5: Respond — include telemetry when memory was recovered ──────────
+    res.json({
+      phonetic,
+      english,
+      audioBase64,
+      telemetry: memoryFragment ?? null,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[interrogate] Error:", message);
