@@ -698,8 +698,8 @@ function RecordingScreen({
 
 // ─── SCREEN 3: The Interrogation Terminal ─────────────────────────────────────
 
-const BAR_CHARS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
 const VIZ_COLS = 28;
+const SILENT_LINE = "----------------------------";
 
 function InterrogationScreen({
   language,
@@ -715,11 +715,12 @@ function InterrogationScreen({
   const [isWaiting, setIsWaiting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [blinkOn, setBlinkOn] = useState(true);
-  const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 1));
-  const [subtitlePhonetic, setSubtitlePhonetic] = useState("> INCOMING PHONETIC STREAM...");
-  const [subtitleEnglish, setSubtitleEnglish] = useState("> AWAITING TRANSLATION DATA...");
+  const [vizBars, setVizBars] = useState<number[]>(() => Array.from({ length: VIZ_COLS }, () => 0));
+  const [subtitlePhonetic, setSubtitlePhonetic] = useState<string | null>(null);
+  const [subtitleEnglish, setSubtitleEnglish] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasResponse = subtitlePhonetic !== null;
 
   useEffect(() => {
     return () => {
@@ -742,15 +743,13 @@ function InterrogationScreen({
         setVizBars(Array.from({ length: VIZ_COLS }, () => Math.floor(Math.random() * 8)));
       }, 80);
     } else {
-      setVizBars(Array.from({ length: VIZ_COLS }, (_, i) => i % 3 === 0 ? 2 : 1));
+      setVizBars(Array.from({ length: VIZ_COLS }, () => 0));
     }
     return () => { if (vizInterval) clearInterval(vizInterval); };
   }, [isPlaying]);
 
   function handleActivate() {
     setIsConnected(true);
-    setSubtitlePhonetic(`> "${agentConfig.phoneticFirstMessage}"`);
-    setSubtitleEnglish(agentConfig.englishFirstMessage.toUpperCase());
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
@@ -760,8 +759,6 @@ function InterrogationScreen({
     const message = input.trim();
     setInput("");
     setIsWaiting(true);
-    setSubtitlePhonetic("> DECRYPTING INCOMING FREQUENCY...");
-    setSubtitleEnglish("> PROCESSING...");
 
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}api/interrogate`, {
@@ -818,12 +815,11 @@ function InterrogationScreen({
     <div className="screen-fade-in" style={{ height: "100vh", width: "100%", overflow: "hidden", background: "#121212", color: "#F0EAD6", display: "flex", flexDirection: "column" }}>
 
       {/* ── Telemetry Header ── */}
-      <div style={{ borderBottom: "2px solid #F0EAD6", display: "flex", alignItems: "center", minHeight: "44px", flexShrink: 0, padding: "0" }}>
+      <div style={{ borderBottom: "2px solid #F0EAD6", display: "flex", alignItems: "center", minHeight: "44px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 20px", borderRight: "2px solid #F0EAD620" }}>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: isConnected ? "#4ade80" : "#F0EAD6", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>[ {isConnected ? "CONNECTED" : "DISCONNECTED"} ]</span>
-          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.75rem", color: "#a09880", letterSpacing: "0.08em" }}>
-            {isConnected ? "TEXT UPLINK ESTABLISHED" : "UPLINK INACTIVE"}
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: isConnected ? "#4ade80" : "#F0EAD640", letterSpacing: "0.06em", opacity: blinkOn ? 1 : 0.2 }}>●</span>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: "0.85rem", color: "#F0EAD6", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            STATUS: {isConnected ? "CONNECTED" : "STANDBY"}
           </span>
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
@@ -859,69 +855,97 @@ function InterrogationScreen({
           </button>
         ) : (
           <>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988050", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "8px" }}>
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "4px" }}>
               / / ACOUSTIC FREQUENCY MONITOR / /
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(80px, 20vh, 160px)" }}>
+            {/* Visualizer bars — flat when silent, animated when playing */}
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "clamp(60px, 16vh, 130px)" }}>
               {vizBars.map((h, i) => (
                 <div
                   key={i}
                   style={{
-                    width: "12px",
-                    background: isPlaying ? "#F0EAD6" : "#F0EAD630",
-                    height: `${(h / 7) * 100}%`,
-                    minHeight: "4px",
-                    transition: isPlaying ? "none" : "height 0.3s, background 0.4s",
+                    width: "11px",
+                    background: isPlaying ? "#F0EAD6" : "#F0EAD620",
+                    height: isPlaying ? `${Math.max(6, (h / 7) * 100)}%` : "3px",
+                    transition: isPlaying ? "none" : "height 0.6s ease, background 0.5s",
                   }}
                 />
               ))}
             </div>
+            {/* ASCII frequency readout */}
             <div style={{
               fontFamily: "'VT323', monospace",
-              fontSize: "clamp(0.9rem, 1.8vw, 1.2rem)",
-              color: isPlaying ? "#F0EAD690" : "#F0EAD625",
-              letterSpacing: "0.02em",
-              transition: "color 0.3s",
+              fontSize: "clamp(0.85rem, 1.6vw, 1.1rem)",
+              letterSpacing: "0.04em",
               userSelect: "none",
               textAlign: "center",
+              transition: "color 0.4s",
+              color: isPlaying ? "#F0EAD680" : "#F0EAD618",
             }}>
-              {vizBars.map((h) => BAR_CHARS[Math.min(h, 7)]).join("")}
+              {isPlaying
+                ? vizBars.map((h) => ["▁","▂","▃","▄","▅","▆","▇","█"][Math.min(h, 7)]).join("")
+                : SILENT_LINE}
             </div>
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.65rem", color: "#a0988040", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "8px" }}>
-              {isPlaying ? "— ENTITY TRANSMITTING —" : isWaiting ? "— DECRYPTING FREQUENCY —" : "— IDLE — AWAITING INPUT —"}
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "0.6rem", color: "#a0988035", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: "4px" }}>
+              {isPlaying ? "— ENTITY TRANSMITTING —" : isWaiting ? "— DECRYPTING FREQUENCY —" : "— SIGNAL INACTIVE —"}
             </div>
           </>
         )}
       </div>
 
       {/* ── Subtitle Engine ── */}
-      <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD618", borderBottom: "1px solid #F0EAD618", padding: "18px 40px 20px", background: "#0a0a0a", minHeight: "110px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
-        <div style={{
-          fontFamily: "'VT323', monospace",
-          fontSize: "1.05rem",
-          color: "#F0EAD650",
-          letterSpacing: "0.06em",
-          opacity: isPlaying || isWaiting ? 1 : 0.6,
-          transition: "opacity 0.4s",
-        }}>
-          {subtitlePhonetic}
-        </div>
-        <div style={{
-          fontFamily: "'Rubik Mono One', monospace",
-          fontSize: "clamp(1rem, 2.5vw, 1.45rem)",
-          color: "#F0EAD6",
-          letterSpacing: "0.06em",
-          lineHeight: 1.25,
-          opacity: isPlaying || isWaiting ? 1 : 0.75,
-          transition: "opacity 0.4s",
-        }}>
-          {subtitleEnglish}
-        </div>
+      <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px" }}>
+        {!isConnected || (!hasResponse && !isWaiting) ? (
+          /* Blinking cursor — shown before connection or before first response */
+          <div style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: "1.4rem",
+            color: "#F0EAD660",
+            letterSpacing: "0.06em",
+          }}>
+            {">"} {blinkOn ? "_" : " "}
+          </div>
+        ) : isWaiting && !hasResponse ? (
+          /* Decrypting animation — only on first message before any response */
+          <div style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: "1.05rem",
+            color: "#F0EAD640",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}>
+            {">"} DECRYPTING INCOMING FREQUENCY{blinkOn ? "..." : "   "}
+          </div>
+        ) : (
+          /* Actual response subtitles */
+          <>
+            <div style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.05rem",
+              color: "#F0EAD648",
+              letterSpacing: "0.06em",
+              lineHeight: 1.3,
+            }}>
+              {isWaiting ? `> DECRYPTING${blinkOn ? "..." : "   "}` : subtitlePhonetic}
+            </div>
+            <div style={{
+              fontFamily: "'Rubik Mono One', monospace",
+              fontSize: "clamp(1rem, 2.4vw, 1.4rem)",
+              color: "#F0EAD6",
+              letterSpacing: "0.05em",
+              lineHeight: 1.25,
+              opacity: isWaiting ? 0.35 : 1,
+              transition: "opacity 0.3s",
+            }}>
+              {subtitleEnglish ?? ""}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* ── Input Deck (Text Only) ── */}
+      {/* ── Input Deck ── */}
       <div style={{ flexShrink: 0, borderTop: "4px solid #F0EAD6", display: "flex", alignItems: "stretch", minHeight: "64px" }}>
-        <form onSubmit={handleSendText} style={{ flex: 1, display: "flex", alignItems: "stretch", gap: 0 }}>
+        <form onSubmit={handleSendText} style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
           <input
             ref={inputRef}
             type="text"
@@ -936,10 +960,10 @@ function InterrogationScreen({
               color: "#F0EAD6",
               fontFamily: "'VT323', monospace",
               fontSize: "1.2rem",
-              padding: "0 20px",
+              padding: "0 24px",
               outline: "none",
               letterSpacing: "0.04em",
-              opacity: isConnected && !isWaiting ? 1 : 0.3,
+              opacity: isConnected && !isWaiting ? 1 : 0.25,
             }}
           />
           <button
@@ -950,10 +974,11 @@ function InterrogationScreen({
               border: "none",
               borderLeft: "2px solid #F0EAD6",
               fontSize: "1rem",
-              padding: "0 28px",
+              padding: "0 30px",
               letterSpacing: "0.1em",
-              opacity: (!input.trim() || !isConnected || isWaiting) ? 0.4 : 1,
+              opacity: (!input.trim() || !isConnected || isWaiting) ? 0.3 : 1,
               cursor: (!input.trim() || !isConnected || isWaiting) ? "not-allowed" : "pointer",
+              transition: "opacity 0.2s",
             }}
           >
             {isWaiting ? "[ ... ]" : "[ TRANSMIT ]"}
