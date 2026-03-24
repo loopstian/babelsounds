@@ -1,0 +1,23 @@
+I need to refine the visual feedback and typography in **Screen 3 (The Interrogation Terminal)** to improve immersion and readability.
+
+**1. Implement the 'Data Stream' Feedback:**
+- Locate the section in Screen 3 that displays feedback while the AI is thinking (the `isWaiting` state).
+- Replace the current sequential text ('DECRYPTING INTENT...', etc.) with a flickering data stream animation similar to Screen 1.
+- **Visuals:** 
+    - Display a constant prefix: `> RECOVERING DATA: `
+    - Followed by a rapidly cycling string of 25-30 random characters (letters, numbers, and cryptic symbols like `†`, `∑`, `Ω`, `§`, `≈`, `∆`, `Γ`, `Ξ`).
+    - Use the `VT323` font.
+    - The characters should randomize every 60ms to create a high-speed 'decryption' effect.
+- **Behavior:** This animation should run for the entire duration that the system is waiting for the `/api/interrogate` response.
+
+**2. Update Subtitle Typography:**
+- Refactor the styling of the **English Translation** text (the large subtitles).
+- **Remove All-Caps:** Disable any `uppercase` or `text-transform: uppercase` styling. The text must be displayed in **Sentence Case** (exactly as returned by the AI).
+- **Change Font Family:** Replace the current blocky font with a cleaner, more readable sans-serif font like **'Rubik'** (if already loaded) or a standard modern sans-serif. 
+- **Font Weight:** Use a 'Medium' or 'Semi-bold' weight to ensure it remains prominent but clean.
+- **Color:** Maintain the off-white/cream `#F0EAD6` color, but you can add a very slight transparency (e.g., `text-[#F0EAD6]/90`) to make it look like a cinematic overlay.
+
+**3. Maintain the Phonetic Line:**
+- Keep the **Phonetic Gibberish** line (the smaller text above the translation) exactly as it is: small, muted, and using the `VT323` terminal font. This provides a nice contrast between the 'raw' ancient data and the 'clean' modern translation.
+
+**Please ensure the terminal feels active during the wait and the final response is easy on the eyes.**"

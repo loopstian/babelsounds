@@ -855,12 +855,14 @@ function RecordingScreen({
 
 const VIZ_COLS = 28;
 const SILENT_LINE = "----------------------------";
-const WAIT_PHASES = [
-  "> DECRYPTING INTENT...",
-  "> ACCESSING ANCIENT MEMORIES...",
-  "> SYNTHESIZING VOCAL RESPONSE...",
-  "> AWAITING UPLINK...",
-];
+const WAIT_SCAN_LEN = 28;
+
+function randomWaitLine() {
+  return Array.from(
+    { length: WAIT_SCAN_LEN },
+    () => SCAN_CHARS[Math.floor(Math.random() * SCAN_CHARS.length)],
+  ).join("");
+}
 
 function InterrogationScreen({
   language,
@@ -880,7 +882,7 @@ function InterrogationScreen({
   const [subtitlePhonetic, setSubtitlePhonetic] = useState<string | null>(null);
   const [subtitleEnglish, setSubtitleEnglish] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<string | null>(null);
-  const [waitPhase, setWaitPhase] = useState(0);
+  const [waitScanLine, setWaitScanLine] = useState("");
   const [chatHistory, setChatHistory] = useState<{ role: "user" | "assistant"; message: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -914,17 +916,16 @@ function InterrogationScreen({
     return () => { if (vizInterval) clearInterval(vizInterval); };
   }, [isPlaying]);
 
-  // Cinematic latency masking — cycle through terminal phases while waiting
+  // Data stream animation while waiting for /api/interrogate response
   useEffect(() => {
-    if (!isWaiting) {
-      setWaitPhase(0);
-      return;
-    }
-    setWaitPhase(0);
-    const t1 = setTimeout(() => setWaitPhase(1), 1500);
-    const t2 = setTimeout(() => setWaitPhase(2), 3500);
-    const t3 = setTimeout(() => setWaitPhase(3), 5000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    if (!isWaiting) { setWaitScanLine(""); return; }
+    setWaitScanLine(randomWaitLine());
+    const tick = () => {
+      setWaitScanLine(randomWaitLine());
+      iv = setTimeout(tick, 55 + Math.random() * 25);
+    };
+    let iv = setTimeout(tick, 60);
+    return () => clearTimeout(iv);
   }, [isWaiting]);
 
   async function handleSendText(e: React.FormEvent) {
@@ -1070,9 +1071,10 @@ function InterrogationScreen({
       {/* ── Subtitle Engine ── */}
       <div style={{ flexShrink: 0, borderTop: "1px solid #F0EAD615", borderBottom: "1px solid #F0EAD615", padding: "20px 40px 22px", background: "#080808", minHeight: "116px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "8px" }}>
         {isWaiting && !hasResponse ? (
-          /* Cinematic wait — first message, no prior response */
-          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD640", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            {WAIT_PHASES[waitPhase]}{blinkOn ? "" : ""}
+          /* Data stream — first message, no prior response */
+          <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.1rem", color: "#F0EAD6", letterSpacing: "0.08em", display: "flex", alignItems: "center" }}>
+            <span style={{ color: "#F0EAD650", flexShrink: 0 }}>&gt; RECOVERING DATA:&nbsp;</span>
+            <span style={{ letterSpacing: "0.1em" }}>{waitScanLine}</span>
           </div>
 
         ) : !hasResponse && !isWaiting ? (
@@ -1100,19 +1102,22 @@ function InterrogationScreen({
               </div>
             )}
 
-            {/* Phonetic line — shows wait phase text while waiting, snaps to response */}
-            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD648", letterSpacing: "0.06em", lineHeight: 1.3 }}>
-              {isWaiting ? WAIT_PHASES[waitPhase] : subtitlePhonetic}
+            {/* Phonetic line — shows scan stream while waiting, snaps to response */}
+            <div style={{ fontFamily: "'VT323', monospace", fontSize: "1.05rem", color: "#F0EAD648", letterSpacing: "0.06em", lineHeight: 1.3, overflow: "hidden", whiteSpace: "nowrap" }}>
+              {isWaiting
+                ? <><span style={{ color: "#F0EAD630" }}>&gt; RECOVERING DATA:&nbsp;</span><span style={{ color: "#F0EAD670" }}>{waitScanLine}</span></>
+                : subtitlePhonetic}
             </div>
 
             {/* English translation — dims during wait, snaps to full opacity on arrival */}
             <div style={{
-              fontFamily: "'Rubik Mono One', monospace",
-              fontSize: "clamp(1rem, 2.4vw, 1.4rem)",
-              color: "#F0EAD6",
-              letterSpacing: "0.05em",
-              lineHeight: 1.25,
-              opacity: isWaiting ? 0.25 : 1,
+              fontFamily: "'Rubik', sans-serif",
+              fontWeight: 500,
+              fontSize: "clamp(1rem, 2.4vw, 1.35rem)",
+              color: "#F0EAD6E6",
+              letterSpacing: "0.01em",
+              lineHeight: 1.35,
+              opacity: isWaiting ? 0.2 : 1,
               transition: "opacity 0.3s",
             }}>
               {subtitleEnglish ?? ""}
