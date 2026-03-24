@@ -472,14 +472,16 @@ function ArchivesScreen({ onSelectLanguage }: { onSelectLanguage: (sig: Language
 
 function RecordingScreen({
   language,
-  voiceSynthResult,
+  voiceSynthResult: voiceSynthResultProp,
   onBack,
   onProceed,
+  onVoiceRegenerated,
 }: {
   language: LanguageSignal;
   voiceSynthResult: VoiceSynthResult | null;
   onBack: () => void;
   onProceed: (config: AgentConfig) => void;
+  onVoiceRegenerated: (result: VoiceSynthResult) => void;
 }) {
   const [vocalBlueprint, setVocalBlueprint] = useState(language.vocalBlueprint);
   const [systemPrompt, setSystemPrompt] = useState(language.systemPrompt);
@@ -487,11 +489,16 @@ function RecordingScreen({
   const [isInitializing, setIsInitializing] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenSuccess, setRegenSuccess] = useState(false);
+  // Local shadow of voiceSynthResult so regeneration is reflected immediately
+  const [localVoiceSynth, setLocalVoiceSynth] = useState<VoiceSynthResult | null>(voiceSynthResultProp);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  function buildAudio(): HTMLAudioElement | null {
-    if (!voiceSynthResult?.audioBase64) return null;
-    const audio = new Audio(`data:audio/mpeg;base64,${voiceSynthResult.audioBase64}`);
+  function buildAudio(synth?: VoiceSynthResult | null): HTMLAudioElement | null {
+    const src = (synth ?? localVoiceSynth)?.audioBase64;
+    if (!src) return null;
+    const audio = new Audio(`data:audio/mpeg;base64,${src}`);
     audio.volume = 0.9;
     audio.onplay = () => setIsPlaying(true);
     audio.onpause = () => setIsPlaying(false);
@@ -501,7 +508,7 @@ function RecordingScreen({
   }
 
   useEffect(() => {
-    if (!voiceSynthResult?.audioBase64) return;
+    if (!localVoiceSynth?.audioBase64) return;
     try {
       const audio = buildAudio();
       audio?.play().catch((err) => console.warn("[Babelsounds] Audio autoplay blocked:", err));
@@ -526,6 +533,41 @@ function RecordingScreen({
     }
   }
 
+  async function handleRegenerateVoice() {
+    if (isRegenerating || !vocalBlueprint.trim() || !phoneticFirstMessage.trim()) return;
+    setIsRegenerating(true);
+    setRegenSuccess(false);
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setIsPlaying(false);
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/synthesize-voice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vocalBlueprint, phoneticFirstMessage }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `API returned ${res.status}`);
+      }
+      const data = (await res.json()) as VoiceSynthResult;
+      setLocalVoiceSynth(data);
+      onVoiceRegenerated(data);
+      setRegenSuccess(true);
+      setTimeout(() => setRegenSuccess(false), 3000);
+      // Auto-play new audio
+      try {
+        const audio = buildAudio(data);
+        audio?.play().catch((err) => console.warn("[Babelsounds] Regen autoplay blocked:", err));
+      } catch { /* silent */ }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[Babelsounds] Voice regen error:", msg);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }
+
   async function handleInitializeEntity() {
     if (isInitializing) return;
     setIsInitializing(true);
@@ -536,7 +578,7 @@ function RecordingScreen({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          voiceId: voiceSynthResult?.voiceId,
+          voiceId: localVoiceSynth?.voiceId,
           languageName: language.name,
           systemPrompt,
           phoneticRules: language.typingGuide,
@@ -549,7 +591,7 @@ function RecordingScreen({
       }
       const data = (await res.json()) as { agentId: string };
       console.log("AGENT CREATED WITH ID:", data.agentId);
-      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage, agentId: data.agentId, voiceId: voiceSynthResult!.voiceId, languageName: language.name, phoneticRules: language.typingGuide });
+      onProceed({ vocalBlueprint, systemPrompt, phoneticFirstMessage, englishFirstMessage: language.englishFirstMessage, agentId: data.agentId, voiceId: localVoiceSynth!.voiceId, languageName: language.name, phoneticRules: language.typingGuide });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[Babelsounds] Agent creation error:", msg);
@@ -623,9 +665,9 @@ function RecordingScreen({
           <div style={{ marginBottom: "28px" }}>
             <label style={labelStyle}>Vocal Cord Synthesis</label>
             <span style={subtitleStyle}>Physical acoustic parameters for ElevenLabs Voice Design. Describes the entity's larynx, resonance, and texture.</span>
-            {voiceSynthResult?.voiceId && (
+            {localVoiceSynth?.voiceId && (
               <div style={{ marginBottom: "10px", padding: "8px 12px", border: "1px solid #F0EAD630", background: "#0a0a0a", fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.08em" }}>
-                VOICE_ID: <span style={{ color: "#F0EAD6" }}>{voiceSynthResult.voiceId}</span>
+                VOICE_ID: <span style={{ color: "#F0EAD6" }}>{localVoiceSynth.voiceId}</span>
               </div>
             )}
             <textarea
@@ -635,8 +677,34 @@ function RecordingScreen({
               style={taStyle}
             />
 
+            {/* Regenerate Voice Button */}
+            <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "14px" }}>
+              <button
+                onClick={handleRegenerateVoice}
+                disabled={isRegenerating}
+                style={{
+                  fontFamily: "'VT323', monospace",
+                  fontSize: "1.05rem",
+                  letterSpacing: "0.08em",
+                  color: isRegenerating ? "#a09880" : "#F0EAD6",
+                  background: "transparent",
+                  border: `2px solid ${isRegenerating ? "#F0EAD640" : "#F0EAD6"}`,
+                  padding: "8px 20px",
+                  cursor: isRegenerating ? "not-allowed" : "pointer",
+                  transition: "border-color 0.15s, color 0.15s",
+                }}
+              >
+                {isRegenerating ? "> RECALIBRATING..." : "[ REGENERATE VOICE ]"}
+              </button>
+              {regenSuccess && (
+                <span className="telemetry-flicker" style={{ fontFamily: "'VT323', monospace", fontSize: "1rem", color: "#a09880", letterSpacing: "0.08em" }}>
+                  &gt; VOICE SYNC COMPLETE.
+                </span>
+              )}
+            </div>
+
             {/* Vocal Profile Player */}
-            {voiceSynthResult?.audioBase64 && (
+            {localVoiceSynth?.audioBase64 && (
               <button
                 onClick={handleTogglePlay}
                 style={{
@@ -1246,6 +1314,7 @@ export default function App() {
         language={selectedLanguage}
         voiceSynthResult={voiceSynthResult}
         onBack={() => setScreen("archives")}
+        onVoiceRegenerated={setVoiceSynthResult}
         onProceed={(config) => {
           setAgentConfig(config);
           setScreen("interrogation");
