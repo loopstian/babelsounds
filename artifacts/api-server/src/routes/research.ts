@@ -125,10 +125,10 @@ ${truncate(wiktData, 15000)}
 
 Analyze the above scraped data and produce the Language Signal JSON.`;
 
-    console.log("[research] Starting synthesis with gemini-2.5-flash...");
+    console.log("[research] Starting synthesis with gemini-3.1-flash-lite-preview...");
 
     const synthesisModel = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite-preview",
       systemInstruction: SYNTHESIS_INSTRUCTION,
     });
 
