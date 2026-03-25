@@ -494,42 +494,57 @@ function RecordingScreen({
   // Local shadow of voiceSynthResult so regeneration is reflected immediately
   const [localVoiceSynth, setLocalVoiceSynth] = useState<VoiceSynthResult | null>(voiceSynthResultProp);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isMountedRef = useRef(true);
 
-  function buildAudio(synth?: VoiceSynthResult | null): HTMLAudioElement | null {
-    const src = (synth ?? localVoiceSynth)?.audioBase64;
-    if (!src) return null;
-    const audio = new Audio(`data:audio/mpeg;base64,${src}`);
+  // ── Stop + release current audio instance ──────────────────────────────────
+  function stopAudio() {
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.src = "";
+      a.onplay = null;
+      a.onpause = null;
+      a.onended = null;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  }
+
+  // ── Create, register, and immediately play a new preview ───────────────────
+  function playPreview(base64: string) {
+    stopAudio();
+    const audio = new Audio(`data:audio/mpeg;base64,${base64}`);
     audio.volume = 0.9;
     audio.onplay = () => setIsPlaying(true);
     audio.onpause = () => setIsPlaying(false);
     audio.onended = () => setIsPlaying(false);
     audioRef.current = audio;
-    return audio;
+    audio.play().catch((err) => console.warn("[Babelsounds] Autoplay blocked:", err));
   }
 
+  // ── Mount: auto-play initial preview; unmount: hard-stop everything ─────────
   useEffect(() => {
-    if (!localVoiceSynth?.audioBase64) return;
-    try {
-      const audio = buildAudio();
-      audio?.play().catch((err) => console.warn("[Babelsounds] Audio autoplay blocked:", err));
-    } catch (err) {
-      console.error("[Babelsounds] Audio init error:", err);
+    if (localVoiceSynth?.audioBase64) {
+      playPreview(localVoiceSynth.audioBase64);
     }
+    return () => {
+      isMountedRef.current = false;
+      stopAudio();
+    };
   }, []);
 
   function handleTogglePlay() {
-    try {
-      if (!audioRef.current) buildAudio();
-      const audio = audioRef.current;
-      if (!audio) return;
-      if (isPlaying) {
-        audio.pause();
-        audio.currentTime = 0;
+    if (isPlaying) {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+    } else {
+      const src = localVoiceSynth?.audioBase64;
+      if (!src) return;
+      if (audioRef.current) {
+        audioRef.current.play().catch((err) => console.warn("[Babelsounds] Manual play blocked:", err));
       } else {
-        audio.play().catch((err) => console.warn("[Babelsounds] Manual play blocked:", err));
+        playPreview(src);
       }
-    } catch (err) {
-      console.error("[Babelsounds] Toggle play error:", err);
     }
   }
 
@@ -537,8 +552,7 @@ function RecordingScreen({
     if (isRegenerating || !vocalBlueprint.trim() || !phoneticFirstMessage.trim()) return;
     setIsRegenerating(true);
     setRegenSuccess(false);
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    setIsPlaying(false);
+    stopAudio();
 
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}api/synthesize-voice`, {
@@ -551,20 +565,19 @@ function RecordingScreen({
         throw new Error(body.error ?? `API returned ${res.status}`);
       }
       const data = (await res.json()) as VoiceSynthResult;
+      // Guard: component may have unmounted while the request was in flight
+      if (!isMountedRef.current) return;
       setLocalVoiceSynth(data);
       onVoiceRegenerated(data);
       setRegenSuccess(true);
       setTimeout(() => setRegenSuccess(false), 3000);
-      // Auto-play new audio
-      try {
-        const audio = buildAudio(data);
-        audio?.play().catch((err) => console.warn("[Babelsounds] Regen autoplay blocked:", err));
-      } catch { /* silent */ }
+      playPreview(data.audioBase64);
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[Babelsounds] Voice regen error:", msg);
     } finally {
-      setIsRegenerating(false);
+      if (isMountedRef.current) setIsRegenerating(false);
     }
   }
 
