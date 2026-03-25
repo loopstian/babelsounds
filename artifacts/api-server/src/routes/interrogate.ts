@@ -234,7 +234,7 @@ router.post("/interrogate", async (req, res) => {
 
   try {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
     // ── Step 1: Intent Gatekeeper ──────────────────────────────────────────────
     const gate = await runGatekeeper(model, userMessage, languageName || "an ancient culture");
